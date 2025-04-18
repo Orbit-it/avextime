@@ -1,0 +1,45 @@
+
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import LoginPage from "./pages/LoginPage";
+import ErrorBoundary from "./components/ErrorBoundary";
+import Navbar from "./components/Navbar";
+import Pointage from "./pages/Pointage";
+import Dashbord from "./pages/Dashboard"
+import GestionRh from "./pages/GestionRH";
+import Machines from "./pages/Machines";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<LoginPage />} />
+            
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'employee']} />}>
+              <Route path="/dashboard" element={<Dashbord />} />
+            </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'employee']} />}>
+              <Route path="/pointage" element={<Pointage />} />
+            </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+              <Route path="/gestionrh" element={<GestionRh />} />
+            </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/machines" element={<Machines />} />
+            </Route>
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;

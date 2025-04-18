@@ -1,0 +1,43 @@
+/* Style général des liens */
+.nav-link {
+  text-decoration: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  background-color: #27aae0;
+  border: 1px solid transparent;
+}
+
+/* Effet de survol */
+.nav-link:hover {
+  background-color: #1e8abf;
+  border-color: #27aae0;
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Style pour le lien actif */
+.nav-link.active {
+  background-color: aquamarine;
+  color: #000000;
+  border-color: aquamarine;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Style pour les icônes */
+.icon {
+  font-size: 20px;
+}
+
+/* Logo */
+.logo-image {
+  transition: transform 0.3s ease;
+}
+
+.logo-image:hover {
+  transform: scale(1.05);
+}

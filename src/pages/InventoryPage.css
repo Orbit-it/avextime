@@ -1,0 +1,188 @@
+.inventory-page {
+    padding: 10px;
+    font-family: Arial, sans-serif;
+  }
+  .search-bar {
+    width: 100%; /* La barre de recherche prend toute la largeur de son conteneur */
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    box-sizing: border-box; /* S'assure que padding et border sont inclus dans la largeur */
+  }
+  
+  .article-details {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 2px;
+    background-color: #f9f9f9;
+  }
+  
+  .article-details h3 {
+    margin-bottom: 15px;
+  }
+  
+  .article-details p {
+    margin: 10px 0;
+  }
+  
+  .article-details input {
+    padding: 5px;
+    margin-left: 10px;
+    border: 1px solid #49564d;
+    background-color: #eff1ef;
+    border-radius: 2px;
+    font-size: 14px;
+  }
+  .article-details select {
+    padding: 5px;
+    padding-inline: 10px;
+    margin-left: 10px;
+    border: 1px solid #49564d;
+    background-color: #eff1ef;
+    border-radius: 2px;
+    font-size: 14px;
+  }
+  .emplacement-fields {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+  .price-fields {
+    display: flex;
+    gap: 5px;
+    margin-top: 2px;
+    margin-bottom: 5px;
+  }
+  
+  .emplacement-fields input {
+    flex: 1;
+  }
+  .composite-fields {
+    border: 1px solid #140c0c;
+    color: #000;
+    padding: 5px;
+    margin-inline: 5px;
+    flex: 1;
+    border-radius: 2px;
+    background-color: antiquewhite;
+  }
+  .validate-button {
+    padding: 10px 30px;
+    background-color: #084478; 
+    color: #ffffff;
+    font-weight: bold;
+    margin-inline: 5px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Transition pour l'effet hover */
+  }
+  .validate-button:hover {
+    background-color: #1abc9c; /* Ton plus foncé pour l'effet hover */
+  }
+
+  .highlight-red {
+    background-color: rgb(189, 109, 109);
+    color: white; /* Optionnel pour que le texte reste lisible */
+  }
+  .highlight-green {
+    background-color: rgb(109, 189, 152);
+    color: white; /* Optionnel pour que le texte reste lisible */
+  }
+
+ /* Style global du modal */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%; /* Ajuste la largeur selon tes besoins */
+  max-width: 500px; /* Limite la largeur à 500px (ou une autre valeur) */
+  padding: 25px;
+  background-color: #3a4e73; /* Couleur d'arrière-plan plus sophistiquée */
+  border-radius: 2px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Ombre plus douce */
+  z-index: 1000; /* Assure-toi que le modal soit au-dessus de tout le reste */
+  overflow: auto; /* Permet de scroller si le contenu est trop grand */
+  color: #f5f5f5; /* Texte clair sur fond sombre */
+}
+
+/* Boutons à l'intérieur du modal */
+.modal button {
+  padding: 12px 25px;
+  margin-top: 20px;
+  background-color: #2ef258; /* Orange chaleureux */
+  color: rgb(3, 0, 0);
+  margin-inline: 5px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* Transition pour l'effet hover */
+}
+
+/* Changement de couleur au survol du bouton */
+.modal button:hover {
+  background-color: #0c9939; /* Ton plus foncé pour l'effet hover */
+}
+
+/* Fond semi-transparent derrière le modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3); /* Fond plus clair */
+  z-index: 999;
+}
+
+/* Pour fermer le modal avec un bouton */
+.modal h2 {
+  margin-bottom: 10px;
+  color: #f5f5f5;
+  text-align: center;
+}
+
+/* Changement de couleur au survol du bouton de fermeture */
+.modal-close:hover {
+  color: #f28a2e; /* Couleur orange pour le survol */
+}
+/* Style de l'icône de validation */
+.validation-icon {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #4caf50; /* Vert élégant */
+  color: #ffffff; /* Blanc pur */
+  padding: 20px 40px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 600;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: fadeInOut 2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacement entre l'icône et le texte */
+}
+
+
+
+/* Animation fluide d'apparition et disparition */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  20%, 80% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+}

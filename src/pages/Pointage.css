@@ -1,0 +1,344 @@
+/* Basic table styling */
+.App {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  h1 {
+    text-align: center;
+    color: #333;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+  }
+  td {
+    border: 1px solid #ddd;
+    padding: 5px;
+    text-align: center;
+  }
+  .present {
+    border-radius: 5px;
+    background-color: rgb(127, 206, 255);;
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  
+  .table-container {
+    overflow-x: auto; /* Enable horizontal scrolling */
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+  }
+  
+  /* Sticky column styles */
+  .sticky-column {
+    position: sticky;
+    left: 0;
+    background-color: #f2f2f2; /* Match header background */
+    z-index: 1; /* Ensure it appears above scrolling content */
+  }
+  
+  .employee-info {
+    text-align: left;
+    max-width: 200px; /* Adjust width as needed */
+    min-width: 150px; /* Adjust width as needed */
+  }
+  
+  .retard {
+    border-radius: 5px;
+    background-color: rgb(127, 206, 255);;
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .jf_win {
+    border-radius: 5px;
+    background-color: aquamarine;
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .jf_lose {
+    border-radius: 5px;
+    background-color: rgb(117, 145, 125);;
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  
+  .sup {
+    border-radius: 5px;
+    background-color: rgb(127, 206, 255);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .cell-miss {
+    border-radius: 5px;
+    background-color: rgb(224, 225, 219);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .map {
+    border-radius: 5px;
+    background-color: rgb(240, 70, 70);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .accident {
+    border-radius: 5px;
+    background-color: rgb(164, 15, 154);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .conge {
+    border-radius: 5px;
+    background-color: rgb(41, 225, 228);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .cg_maladie {
+    border-radius: 5px;
+    background-color: rgb(228, 225, 41);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .cg_exp {
+    border-radius: 5px;
+    background-color: rgb(10, 235, 235);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .rdv_medical {
+    border-radius: 5px;
+    background-color: rgb(235, 126, 10);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .night-shift {
+    border-radius: 5px;
+    background-color: rgb(78, 74, 83);
+    padding: 5px;
+    color: #fff;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  
+  .absent {
+    border-radius: 5px;
+    background-color: rgb(224, 225, 219);
+    padding: 5px;
+    min-width: 150px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  
+  th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  /* Date header styles */
+  .date-header {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .day-number {
+    font-size: 30px; /* Big number for the day */
+    font-weight: bold;
+    margin-right: 8px;
+  }
+  
+  .day-month {
+    text-align: left;
+  }
+  
+  .day-month p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+  
+  .status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 5px;
+  }
+  
+  .status-retard { background-color: yellow; }
+  .status-present { background-color: green; }
+  .status-map { background-color: red; }
+  .status-sup { background-color: blue; }
+  .status-miss { background-color: rgb(51, 51, 53); }
+  
+  /* Week navigation styles */
+  .week-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 100;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .week-navigation button {
+    padding: 8px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #f2f2f2;
+    border-radius: 4px;
+  }
+  
+  .week-navigation button:hover {
+    background-color: #ddd;
+  }
+  
+  .week-navigation input[type="week"] {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+
+  
+.search-container {
+  display: flex;
+  gap: 5px;
+}
+
+.search-container input,
+.search-container select {
+  padding: 5px;
+  border: 1px solid #27aae0;
+  border-radius: 4px;
+  padding: 8px;
+  width: 300px;
+  border: 1px solid #27aae0;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  position: sticky;
+  top: 0px; /* Adjust this value based on the height of the search area */
+  background-color: rgb(66, 64, 64);
+  z-index: 50;
+}
