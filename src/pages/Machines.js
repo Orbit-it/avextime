@@ -25,6 +25,7 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import Add from '@mui/icons-material/Add';
 import colorButtonStyle from '../config/Color';
 import ExcelImportModal from '../components/ExcelUploader';
+import apiConfig from '../config/Endpoint';
 
 const MachinesPage = () => {
   // Données fictives des machines
@@ -42,7 +43,7 @@ const MachinesPage = () => {
   // function to fetch data from the API
   const fetchMachines = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/machines');
+      const response = await axios.get(apiConfig.Endpoint.machine);
       setMachines(response.data);
     } catch (error) {
       console.error('Error fetching machines:', error);
@@ -52,7 +53,7 @@ const MachinesPage = () => {
   // function to add a new machine
   const addMachine = async (machine) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/machines', machine);
+      const response = await axios.post(apiConfig.Endpoint.machine, machine);
       setMachines([...machines, response.data]);
     } catch (error) {
       console.error('Error adding machine:', error);
@@ -62,7 +63,7 @@ const MachinesPage = () => {
   // function to update a machine
   const updateMachine = async (machine) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/machines/${machine.id}`, machine);
+      const response = await axios.put(`${apiConfig.Endpoint.machine}/${machine.id}`, machine);
       setMachines((prevMachines) =>
         prevMachines.map((m) => (m.id === machine.id ? response.data : m))
       );
@@ -74,7 +75,7 @@ const MachinesPage = () => {
   // function to delete a machine
   const deleteMachine = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/machines/${id}`);
+      await axios.delete(`${apiConfig.Endpoint.machine}/${id}`);
       setMachines((prevMachines) => prevMachines.filter((m) => m.id !== id));
     } catch (error) {
       console.error('Error deleting machine:', error);
@@ -83,7 +84,7 @@ const MachinesPage = () => {
 
   const handleDownloadAttendance = async (machine) => {
     try {
-      const response = await axios.post(`http://localhost:5000/api/machines/${machine.id}/attendance`, { machine });
+      const response = await axios.post(`${apiConfig.Endpoint.machine}/${machine.id}/attendance`, { machine });
       console.log('Attendance data:', response.data);
       // Handle the response data as needed (e.g., download a file, show a message, etc.)
     } catch (error) {

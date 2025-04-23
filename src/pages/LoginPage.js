@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import Endpoint from "../config/Endpoint";
+import axios from "axios"; 
+import apiConfig from "../config/Endpoint";
 import { useAuth } from "../context/AuthContext";
 import "./LoginPage.css";
 
@@ -17,7 +17,7 @@ const LoginPage = () => {
     setError(""); // Réinitialiser l'erreur
 
     try {
-      const response = await axios.post(Endpoint.login, { 
+      const response = await axios.post(apiConfig.Endpoint.login, { 
         username, 
         password 
       });
@@ -38,7 +38,7 @@ const LoginPage = () => {
       switch(role) {
         case "admin":
         case "manager":
-          navigate("/dashboard");
+          navigate("/");
           break;
         case "employee":
           navigate("/pointage");

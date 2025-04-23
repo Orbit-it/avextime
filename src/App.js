@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 import Pointage from "./pages/Pointage";
+import NonAccessPage from "./pages/NonAccessPage";
 import Dashbord from "./pages/Dashboard"
 import GestionRh from "./pages/GestionRH";
 import Machines from "./pages/Machines";
@@ -18,14 +19,12 @@ function App() {
         <Router>
           <Navbar />
           <Routes>
-            <Route path="/" element={<LoginPage />} />
-            
-            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'employee']} />}>
-              <Route path="/dashboard" element={<Dashbord />} />
-            </Route>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/refused" element={<NonAccessPage />} />
             
             <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'employee']} />}>
               <Route path="/pointage" element={<Pointage />} />
+              <Route path="/" element={<Dashbord />} />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>

@@ -6,6 +6,7 @@ import {
 import { Add, Edit, Delete } from '@mui/icons-material';
 import axios from 'axios';
 import { format, differenceInDays, addDays, isBefore } from 'date-fns';
+import apiConfig from '../config/Endpoint';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -35,9 +36,9 @@ const Planning = () => {
     setLoading(true);
     try {
       const [shiftsResponse, departmentsResponse, employeesResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/shifts'),
-        axios.get('http://localhost:5000/api/departments'),
-        axios.get('http://localhost:5000/api/employees'),
+        axios.get(apiConfig.Endpoint.shift),
+        axios.get(apiConfig.Endpoint.departments),
+        axios.get(apiConfig.Endpoint.employees),
       ]);
 
       setShifts(shiftsResponse.data || []);
@@ -87,7 +88,7 @@ const Planning = () => {
         schedule: newShift.schedule,
       };
 
-      await axios.post('http://localhost:5000/api/shifts', payload);
+      await axios.post(apiConfig.Endpoint.shift, payload);
       fetchData();
       setOpenCreateDialog(false);
       setNewShift({
@@ -120,7 +121,7 @@ const Planning = () => {
         schedule: editShift.schedule,
       };
 
-      await axios.put(`http://localhost:5000/api/shifts/${editShiftId}`, payload);
+      await axios.put(`${apiConfig.Endpoint.shift}/${editShiftId}`, payload);
       fetchData();
       setOpenEditDialog(false);
       setEditShift(null);
@@ -155,7 +156,7 @@ const Planning = () => {
   const handleDeleteShift = async (shiftId) => {
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/shifts/${shiftId}`);
+      await axios.delete(`${apiConfig.Endpoint.shift}/${shiftId}`);
       fetchData();
     } catch (err) {
       setError(err.message);

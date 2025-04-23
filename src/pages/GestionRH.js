@@ -39,7 +39,7 @@ const GestionRh = () => {
   const [holidays, setHolidays] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [holidayDescription, setHolidayDescription] = useState('');
-  const [drawerOpen, setDrawerOpen] = useState(false); // État pour afficher/masquer le drawer
+  const [drawerOpen, setDrawerOpen] = useState(true); // État pour afficher/masquer le drawer
 
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);

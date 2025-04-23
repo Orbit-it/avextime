@@ -3,6 +3,7 @@ import './Pointage.css'; // Import the CSS file for styling
 import { ListItem, ListItemText, Avatar, ListItemAvatar } from '@mui/material';
 import { yellow, blue } from '@mui/material/colors';
 import axios from 'axios';
+import apiconfig from '../config/Endpoint'
 
 function Pointage() {
   // State to manage the current week's start date (Monday)
@@ -29,7 +30,7 @@ function Pointage() {
 
   const fetchEmployees = async () => {
     try {
-        const response = await axios.get('http://localhost:5000/api/employees');
+        const response = await axios.get(apiconfig.Endpoint.employees);
         setEmployees(response.data);
     } catch (error) {
         console.error('Error fetching employees:', error);
@@ -38,7 +39,7 @@ function Pointage() {
 
   const fetchDepartments = async () => {
     try {
-        const response = await axios.get('http://localhost:5000/api/departments');
+        const response = await axios.get(apiconfig.Endpoint.departments);
         setDepartments(response.data);
     } catch (error) {
         console.error('Error fetching departments:', error);
@@ -47,7 +48,7 @@ function Pointage() {
 
   const fetchAttendances = async () => {
     try { 
-        const response = await axios.get('http://localhost:5000/api/summary');
+        const response = await axios.get(apiconfig.Endpoint.pointagesSummary);
         setAttendances(response.data);
     } catch (error) {
         console.error('Error fetching attendances:', error);

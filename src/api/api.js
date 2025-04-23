@@ -1,11 +1,12 @@
 import axios from "axios";
-import Endpoint from "../config/Endpoint";
+import apiConfig from "../config/Endpoint";
+
 
 
 // Créer un employe
 const createEmployee = async (data) => {
     try {
-      const response = await axios.post(Endpoint.employees, data);
+      const response = await axios.post(apiConfig.Endpoint.employees, data);
       return { success: true, data: response.data }; 
     } catch (error) {
       console.error("Error creating employee:", error);
@@ -19,7 +20,7 @@ const createEmployee = async (data) => {
 // Update an employee
 const updateEmployee = async (id, data) => {
     try {
-        const response = await axios.put(`${Endpoint.employees}/${id}`, data);
+        const response = await axios.put(`${apiConfig.Endpoint.employees}/${id}`, data);
         return { success: true, data: response.data }; 
     } catch (error) {
         console.error("Error updating employee:", error);
@@ -31,7 +32,7 @@ const updateEmployee = async (id, data) => {
 // Fetching employees
 const fetchEmployees = async (setter) => {
     try {
-        const response = await axios.get(Endpoint.employees);
+        const response = await axios.get(apiConfig.Endpoint.employees);
         setter(response.data)
     }
     catch(error) {
@@ -42,7 +43,7 @@ const fetchEmployees = async (setter) => {
 // Fetching departments
 const fetchDepartments = async (setter) => {
     try {
-        const response = await axios.get(Endpoint.departments);
+        const response = await axios.get(apiConfig.Endpoint.departments);
         setter(response.data)
     }catch(error) {
         console.log("Error fetching departments", error);
@@ -53,7 +54,7 @@ const fetchDepartments = async (setter) => {
 // Fetching layoffs
 const fetchLayoffs = async (setter) => {
     try {
-        const response = await axios.get(Endpoint.layoffs);
+        const response = await axios.get(apiConfig.Endpoint.layoffs);
         setter(response.data)
     }catch(error) {
         console.log("Error fetching layoffs", error);
@@ -64,7 +65,7 @@ const fetchLayoffs = async (setter) => {
 // fetching holidays
 const fetchHolidays = async (setter) => {
     try {
-        const response = await axios.get(Endpoint.holidays);
+        const response = await axios.get(apiConfig.Endpoint.holidays);
         setter(response.data)
     }catch(error) {
         console.log("Error fetching holidays", error);
@@ -75,7 +76,7 @@ const fetchHolidays = async (setter) => {
 // update holiday
 const updateHoliday = async (id, data) => {
     try {
-        const response = await axios.put(`${Endpoint.holidays}/${id}`, data);
+        const response = await axios.put(`${apiConfig.Endpoint.holidays}/${id}`, data);
         return response.data;
     } catch (error) {
         console.error("Error updating holiday:", error);
@@ -86,7 +87,7 @@ const updateHoliday = async (id, data) => {
 // create holiday
 const createHoliday = async (data) => {
     try {
-        const response = await axios.post(Endpoint.holidays, data);
+        const response = await axios.post(apiConfig.Endpoint.holidays, data);
         return response.data;
     } catch (error) {
         console.error("Error creating holiday:", error);
@@ -96,7 +97,7 @@ const createHoliday = async (data) => {
 
 const getHoliday = async (id) => {
     try {
-      const response = await axios.get(`${Endpoint.holidays}/${id}`);
+      const response = await axios.get(`${apiConfig.Endpoint.holidays}/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error getting holiday:', error);
@@ -107,7 +108,7 @@ const getHoliday = async (id) => {
 // delete holiday
  const deleteHoliday = async (id) => {
      try {
-        const response = await axios.delete(`${Endpoint.holidays}/${id}`);
+        const response = await axios.delete(`${apiConfig.Endpoint.holidays}/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error deleting holiday:", error);
@@ -118,7 +119,7 @@ const getHoliday = async (id) => {
 // Fonction pour login
 const login = async (data) => {
     try {
-        const response = await axios.post(Endpoint.login, data);
+        const response = await axios.post(apiConfig.Endpoint.login, data);
         return { role: response.data.role};
     } catch (error) {
         console.error("Error logging in:", error);
@@ -129,7 +130,7 @@ const login = async (data) => {
 // Fontion pour ajout de pointage manuel
 const addManualPointage = async (data) => {
     try {
-        const response = await axios.post(Endpoint.pointage, data);
+        const response = await axios.post(apiConfig.Endpoint.pointage, data);
         return response.data;
     } catch (error) {
         console.error("Error adding manual pointage:", error);
@@ -138,6 +139,80 @@ const addManualPointage = async (data) => {
 };
 
 
+// Fonction pour recupérer les pointages hebdomadaires avec start et end date
+const fetchWeeklyPointages = async () => {
+    try {
+        const response = await axios.get(apiConfig.Endpoint.weeks);
+        return response;
+    } catch (error) {
+        console.error("Error fetching weekly pointages:", error);
+        throw error;
+    }
+};
+
+
+// Récupérer les pointages summary
+const fetchPointagesSummary = async () => {
+    try {
+        const response = await axios.get(apiConfig.Endpoint.pointagesSummary);
+        return response;
+    } catch (error) {
+        console.error("Error fetching pointages summary:", error);
+        throw error;
+    }
+};
+
+
+// Récupérer les données du Dashboard
+
+const fetchDashboardDatas = async () => {
+    try {
+
+        const response = await axios.get(apiConfig.Endpoint.dashboard);
+        return response;
+
+    } catch (error) {
+        console.log("Erreur fetching data for dashboard from month_attendnce Table");
+        throw error;
+    }
+};
+
+const fetchNotification = async () => {
+    try {
+
+        const response = await axios.get(apiConfig.Endpoint.notif);
+        return response;
+
+    } catch (error) {
+        console.log("Erreur fetching data for dashboard from month_attendnce Table");
+        throw error;
+    }
+};
+
+
+
+const readNotification = async (notificationIds) => {
+    try {
+      // Envoyer la requête au backend pour marquer les notifications comme lues
+      const response = await fetch(`${apiConfig.baseUri}/notifications/mark-as-read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ notification_ids: notificationIds })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour des notifications');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur de mise à jour de notification:", error);
+      throw error;
+    }
+  };
 
 
 
@@ -146,7 +221,9 @@ const addManualPointage = async (data) => {
 
 
 
-export default {fetchEmployees, fetchDepartments, deleteHoliday, createEmployee, updateEmployee, addManualPointage,
+
+export default {fetchEmployees, fetchWeeklyPointages, login, fetchPointagesSummary, fetchDashboardDatas, readNotification,
+    fetchDepartments, deleteHoliday, createEmployee, updateEmployee, addManualPointage, fetchNotification,
     fetchLayoffs, fetchHolidays, updateHoliday,getHoliday, createHoliday};
 
 

@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
 import axios from 'axios';
+import apiConfig from '../config/Endpoint';
 
 const ExcelImportModal = ({ open, onClose, machineId }) => {
   const [file, setFile] = useState(null);
@@ -51,7 +52,7 @@ const ExcelImportModal = ({ open, onClose, machineId }) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post('http://localhost:5000/api/import-excel', formData, {
+      const response = await axios.post(`${apiConfig.baseUri}/import-excel`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

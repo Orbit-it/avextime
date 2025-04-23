@@ -12,6 +12,8 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import fr from 'date-fns/locale/fr';
 import { format, differenceInDays, addDays, isBefore } from 'date-fns';
 
+import apiConfig from "../config/Endpoint";
+
 // Types
 interface Employee {
   id: number;
@@ -62,7 +64,7 @@ interface LoadingState {
 }
 
 // Constantes
-const API_URL = 'http://localhost:5000/api';
+const API_URL = apiConfig.baseUri;
 const LAYOFF_TYPES: {value: LayoffType, label: string}[] = [
   { value: 'map', label: 'Mise à Pied' },
   { value: 'accident', label: 'Accident de Travail' },

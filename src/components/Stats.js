@@ -12,6 +12,7 @@ import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, isBefore, differenceInDays } from 'date-fns';
 import fr from 'date-fns/locale/fr';
+import apiConfig from '../config/Endpoint';
 
 const EmployeeAttendanceStats = () => {
   // États initiaux
@@ -33,7 +34,7 @@ const EmployeeAttendanceStats = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Configuration API
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = apiConfig.baseUri;
   const axiosConfig = {
     headers: {
       'Content-Type': 'application/json',

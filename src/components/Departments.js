@@ -4,6 +4,7 @@ import { Card, CardContent, TextField, Button, Box, Modal, Typography, Autocompl
 import { Add, CheckCircle, Cancel, Person } from '@mui/icons-material';
 import colorButtonStyle from '../config/Color';
 import api from '../api/api';
+import apiConfig from '../config/Endpoint'
 
 const DepartmentComponent = () => {
     const [departments, setDepartments] = useState([]);
@@ -21,14 +22,6 @@ const DepartmentComponent = () => {
         api.fetchEmployees(setEmployees); // Fetch employees when the component mounts
     }, []);
 
-    const fetchDepartments = async () => {
-        try {
-            const response = await axios.get('http://localhost:5000/api/departments');
-            setDepartments(response.data);
-        } catch (error) {
-            console.error('Error fetching departments:', error);
-        }
-    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -41,9 +34,9 @@ const DepartmentComponent = () => {
 
     const handleAddDepartment = async () => {
         try {
-            await axios.post('http://localhost:5000/api/departments', newDepartment);
+            await axios.post(apiConfig.Endpoint.departments, newDepartment);
             setNewDepartment({ code: '', name: '', responsable_id: '' });
-            fetchDepartments();
+            api.fetchDepartments(setDepartments);
             setOpenModal(false); // Close modal after adding
         } catch (error) {
             console.error('Error adding department:', error);
@@ -57,9 +50,9 @@ const DepartmentComponent = () => {
 
     const handleUpdateDepartment = async () => {
         try {
-            await axios.put(`http://localhost:5000/api/departments/${editingDepartment.id}`, editingDepartment);
+            await axios.put(`${apiConfig.Endpoint.departments}/${editingDepartment.id}`, editingDepartment);
             setEditingDepartment(null);
-            fetchDepartments();
+            api.fetchDepartments(setDepartments);
             setOpenModal(false); // Close modal after updating
         } catch (error) {
             console.error('Error updating department:', error);
@@ -68,8 +61,8 @@ const DepartmentComponent = () => {
 
     const handleDeleteDepartment = async (id) => {
         try {
-            await axios.delete(`http://localhost:5000/api/departments/${id}`);
-            fetchDepartments();
+            await axios.delete(`${apiConfig.Endpoint.departments}/${id}`);
+            api.fetchDepartments(setDepartments);
         } catch (error) {
             console.error('Error deleting department:', error);
         }

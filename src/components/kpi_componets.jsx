@@ -13,10 +13,6 @@ export const AbsenteeismRate = ({ rate }) => (
     <CardContent>
       <Typography color="textSecondary">Taux d'Absentéisme</Typography>
       <Typography variant="h4">{rate}%</Typography>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <TrendingDownIcon color="error" />
-        <Typography variant="body2" color="error">+2.5% vs mois dernier</Typography>
-      </div>
     </CardContent>
   </Card>
 );
@@ -27,10 +23,6 @@ export const PresenceRate = ({ rate }) => (
     <CardContent>
       <Typography color="textSecondary">Taux de Présence</Typography>
       <Typography variant="h4">{rate}%</Typography>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <TrendingUpIcon color="success" />
-        <Typography variant="body2" color="success">+1.2% vs mois dernier</Typography>
-      </div>
     </CardContent>
   </Card>
 );
@@ -41,10 +33,6 @@ export const WorkAccidents = ({ count }) => (
     <CardContent>
       <Typography color="textSecondary">Accidents de Travail</Typography>
       <Typography variant="h4">{count}</Typography>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <WarningIcon color="warning" />
-        <Typography variant="body2">Dernier: 12/04/2023</Typography>
-      </div>
     </CardContent>
   </Card>
 );
@@ -55,13 +43,6 @@ export const LeaveManagement = ({ count }) => (
     <CardContent>
       <Typography color="textSecondary">Total Congés</Typography>
       <Typography variant="h4">{count}</Typography>
-      <div style={{ display: 'flex', alignItems: 'center'}}>
-        <EventBusyIcon color="primary" />
-        <Typography variant="body2" style={{ marginLeft: '8px' }}>Norm: 5</Typography>
-
-        <EventBusyIcon style={{ marginLeft: '8px' }} color="primary" />
-        <Typography variant="body2" style={{ marginLeft: '8px' }}>Excep: 5</Typography>
-      </div>
     </CardContent>
   </Card>
 );

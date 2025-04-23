@@ -6,10 +6,13 @@ import {
   CircularProgress, Snackbar
 } from '@mui/material';
 import axios from 'axios';
+import Spin from 'antd';
 import * as XLSX from 'xlsx';
 import api from '../api/api';
 import { Add, CheckCircle, Cancel, Person, Description } from '@mui/icons-material';
 import colorButtonStyle from '../config/Color';
+import apiConfig from '../config/Endpoint';
+
 
 const EmployeeList = () => {
   // États principaux
@@ -220,14 +223,14 @@ const EmployeeList = () => {
         formData.append('avatar', file);
   
         // Uploader l'image
-        const uploadResponse = await axios.post('http://localhost:5000/api/upload-avatar', formData, {
+        const uploadResponse = await axios.post(`${apiConfig.baseUri}upload-avatar`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
   
         // Mettre à jour l'état avec le chemin de l'avatar
-        const avatarPath = 'http://localhost:5000'+ uploadResponse.data.avatarPath;
+        const avatarPath = apiConfig.server + uploadResponse.data.avatarPath;
         setAvatarPreview(avatarPath);
         
         if (openAddEmployeeModal) {
@@ -405,29 +408,29 @@ const getPayrollPeriod = (month, year = new Date().getFullYear()) => {
     const department = departments.find(dep => employee.department_id === dep.id);
     
     return (
-      <TableRow onDoubleClick={() => handleOpenEditEmployeeModal(employee)} style={{ cursor: 'pointer' }}>
-        <TableCell>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar src={employee.avatar} sx={{ mr: 2 }}>
-              {employee.avatar ? null : <Person />}
-            </Avatar>
-            <Box>
-              <Typography>{employee.name}</Typography>
-              <Typography variant="body2" color="textSecondary">{employee.attendance_id}</Typography>
+        <TableRow onDoubleClick={() => handleOpenEditEmployeeModal(employee)} style={{ cursor: 'pointer' }}>
+          <TableCell>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Avatar src={employee.avatar} sx={{ mr: 2 }}>
+                {employee.avatar ? null : <Person />}
+              </Avatar>
+              <Box>
+                <Typography>{employee.name}</Typography>
+                <Typography variant="body2" color="textSecondary">{employee.attendance_id}</Typography>
+              </Box>
             </Box>
-          </Box>
-        </TableCell>
-        <TableCell>{employee.payroll_id}</TableCell>
-        <TableCell>{department?.name}</TableCell>
-        <TableCell>{employee.position}</TableCell>
-        <TableCell>
-          {employee.is_active ? (
-            <CheckCircle color="success" />
-          ) : (
-            <Cancel color="error" />
-          )}
-        </TableCell>
-      </TableRow>
+          </TableCell>
+          <TableCell>{employee.payroll_id}</TableCell>
+          <TableCell>{department?.name}</TableCell>
+          <TableCell>{employee.position}</TableCell>
+          <TableCell>
+            {employee.is_active ? (
+              <CheckCircle color="success" />
+            ) : (
+              <Cancel color="error" />
+            )}
+          </TableCell>
+        </TableRow>  
     );
   };
 
