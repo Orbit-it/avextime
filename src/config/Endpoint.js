@@ -1,7 +1,7 @@
 import { Dashboard } from "@mui/icons-material";
 
-const baseUri = "http://localhost:5000/api";
-const server = "http://localhost:5000";
+const baseUri = "http://192.168.100.170:5050/api";
+const server = "http://192.168.100.170:5050";
 
 const Endpoint = {
     inventory: `${baseUri}/inventory`,  
@@ -17,7 +17,8 @@ const Endpoint = {
     dashboard: `${baseUri}/dashboard`,
     notif: `${baseUri}/notif`,
     shift: `${baseUri}/shifts`,
-    machine: `${baseUri}/machines`
+    machine: `${baseUri}/machines`,
+    attendance: `${baseUri}/attendances`,
 };
 
 export default { Endpoint, baseUri, server };

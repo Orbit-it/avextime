@@ -23,6 +23,7 @@ const EmployeeList = () => {
   // États pour les filtres
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('Tous');
+  const [selectedStatus, setSelectedStatus] = useState('Tous');
   const [inputValue, setInputValue] = useState('');
   
   // États pour les modals
@@ -42,6 +43,7 @@ const EmployeeList = () => {
     month: new Date().getMonth(),
     
   });
+
 
 
   // État pour le preview des exportations
@@ -121,8 +123,13 @@ const EmployeeList = () => {
     
     const matchesDepartment =
       selectedDepartment === 'Tous' || employee.department_id === selectedDepartment;
+
+      const matchStatus = 
+      selectedStatus === 'Tous' || 
+      (selectedStatus === 'true' && employee.is_active === true) || 
+      (selectedStatus === 'false' && employee.is_active === false);
     
-    return matchesSearchTerm && matchesDepartment;
+    return matchesSearchTerm && matchesDepartment && matchStatus;
   });
 
   // Filtrage des employés par période de paie
@@ -223,7 +230,7 @@ const EmployeeList = () => {
         formData.append('avatar', file);
   
         // Uploader l'image
-        const uploadResponse = await axios.post(`${apiConfig.baseUri}upload-avatar`, formData, {
+        const uploadResponse = await axios.post(`${apiConfig.baseUri}/upload-avatar`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
@@ -345,6 +352,8 @@ const getPayrollPeriod = (month, year = new Date().getFullYear()) => {
 
   let dataToExport = filteredEmployees;
 
+
+  /*
   if (type !== 'ALL') {
     const { start, end } = getPayrollPeriod(month);
     const lastYear = new Date().getFullYear() - 1;
@@ -368,7 +377,36 @@ const getPayrollPeriod = (month, year = new Date().getFullYear()) => {
         return termDate >= start && termDate <= end;
       });
     }
+  }   */
+
+  if (type !== 'ALL') {
+    const { start, end } = getPayrollPeriod(month);
+  
+    if (type === 'PFA') {
+      dataToExport = dataToExport.filter(emp => {
+        if (!emp.hire_date || !emp.is_active) return false;
+  
+        const hireDate = new Date(emp.hire_date);
+        const hireAnniversaryThisYear = new Date(start.getFullYear(), hireDate.getMonth(), hireDate.getDate());
+  
+        // Ne pas inclure si embauché cette année (donc < 1 an)
+        const oneYearLater = new Date(hireDate);
+        oneYearLater.setFullYear(hireDate.getFullYear() + 1);
+        if (oneYearLater > end) return false; // pas encore 1 an d'ancienneté
+  
+        return hireAnniversaryThisYear >= start && hireAnniversaryThisYear <= end;
+      });
+  
+    } else if (type === 'STC') {
+      dataToExport = dataToExport.filter(emp => {
+        if (!emp.termination_date) return false;
+  
+        const termDate = new Date(emp.termination_date);
+        return termDate >= start && termDate <= end;
+      });
+    }
   }
+
 
   const data = dataToExport.map(emp => ({
     Nom: emp.name,
@@ -472,9 +510,22 @@ const getPayrollPeriod = (month, year = new Date().getFullYear()) => {
               setInputValue(newInputValue);
             }}
             renderInput={(params) => (
-              <TextField {...params} size="small" label="Filtrer par département" sx={{ width: 250 }} />
+              <TextField {...params} size="small" label="Département" sx={{ width: 200 }} />
             )}
           />
+
+          <TextField
+            select
+            size='small'
+            label="Status"
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            sx={{ width: 150 }}
+          >
+            <MenuItem value="Tous">Tous</MenuItem>
+            <MenuItem value="true">Actifs</MenuItem>
+            <MenuItem value="false">Départs</MenuItem>
+          </TextField>
           
           <Button
             variant="contained"
@@ -725,6 +776,7 @@ const EmployeeModal = ({
           </Box>
 
           <Grid container spacing={2}>
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -774,6 +826,7 @@ const EmployeeModal = ({
                 sx={{ mb: 2 }}
               />
             </Grid>
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -806,14 +859,26 @@ const EmployeeModal = ({
               />
               <TextField
                 fullWidth
+                label="Date de Naissance"
+                size="small"
+                type="date"
+                value={employee.birthday_date}
+                InputLabelProps={{ shrink: true }}
+                onChange={(e) => setEmployee({ ...employee, birthday_date: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+
+          </Grid>
+
+          <TextField
+                fullWidth
                 label="Adresse"
                 size="small"
                 value={employee.address}
                 onChange={(e) => setEmployee({ ...employee, address: e.target.value })}
                 sx={{ mb: 2 }}
               />
-            </Grid>
-          </Grid>
 
           {isEditMode && (
             <>

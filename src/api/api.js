@@ -138,6 +138,28 @@ const addManualPointage = async (data) => {
     }
 };
 
+// Fontion pour corriger le pointage manuellement
+const fixManuallyPointage = async (data) => {
+    try {
+        const response = await axios.post(apiConfig.Endpoint.attendance, data);
+        return response.data;
+    } catch (error) {
+        console.error("Error adding manual pointage:", error);
+        throw error;
+    }
+};
+
+// Fonction pour supprimer un pointage
+const deletePointage = async (id) => {
+    try {
+        const response = await axios.delete(`${apiConfig.Endpoint.attendance}/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erreur de suppression du Pointage:", error);
+        throw error;
+    } 
+}
+
 
 // Fonction pour recupérer les pointages hebdomadaires avec start et end date
 const fetchWeeklyPointages = async () => {
@@ -224,6 +246,6 @@ const readNotification = async (notificationIds) => {
 
 export default {fetchEmployees, fetchWeeklyPointages, login, fetchPointagesSummary, fetchDashboardDatas, readNotification,
     fetchDepartments, deleteHoliday, createEmployee, updateEmployee, addManualPointage, fetchNotification,
-    fetchLayoffs, fetchHolidays, updateHoliday,getHoliday, createHoliday};
+    fetchLayoffs, fetchHolidays, updateHoliday,getHoliday, createHoliday, deletePointage, fixManuallyPointage};
 
 

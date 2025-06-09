@@ -23,17 +23,12 @@
     padding: 12px;
     text-align: center;
   }
-  td {
-    border: 1px solid #ddd;
-    padding: 5px;
-    text-align: center;
-  }
   .present {
     border-radius: 5px;
     background-color: rgb(127, 206, 255);;
     padding: 5px;
     min-width: 150px;
-    max-width: 200px;
+    max-width: 200px;  /* doit etre 160 */
     max-height: 50px;
     display: flex;
     align-items: center; /* Centre verticalement */
@@ -54,6 +49,11 @@
     border: 1px solid #ddd;
     padding: 5px;
     text-align: center;
+  }
+  td {
+    align-items: center;
+    justify-content: center;
+    max-width: 160px;
   }
   
   th {
@@ -100,7 +100,7 @@
   }
   .jf_lose {
     border-radius: 5px;
-    background-color: rgb(117, 145, 125);;
+    background-color: rgb(224, 225, 219);
     padding: 5px;
     min-width: 150px;
     max-width: 200px;
@@ -138,6 +138,30 @@
   .map {
     border-radius: 5px;
     background-color: rgb(240, 70, 70);
+    padding: 5px;
+    min-width: 150px;
+    max-width: 200px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .anomalie {
+    border-radius: 5px;
+    background-color: rgb(204, 113, 39);
+    padding: 5px;
+    min-width: 150px;
+    max-width: 200px;
+    max-height: 50px;
+    display: flex;
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Optionnel : centre horizontalement */
+    height: 100px; /* Nécessaire pour voir l'effet */
+  }
+  .today {
+    border-radius: 5px;
+    background-color: rgb(194, 234, 241);
     padding: 5px;
     min-width: 150px;
     max-width: 200px;
@@ -355,4 +379,114 @@ thead {
   top: 0px; /* Adjust this value based on the height of the search area */
   background-color: rgb(66, 64, 64);
   z-index: 50;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 0;
+  border-radius: 2px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  outline: none;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+/* Animation pour l'ouverture du modal */
+.ReactModal__Overlay {
+  opacity: 0;
+  transition: opacity 200ms ease-in-out;
+}
+
+.ReactModal__Overlay--after-open {
+  opacity: 1;
+}
+
+.ReactModal__Overlay--before-close {
+  opacity: 0;
+}
+
+
+/* Styles for the view mode selector */
+.view-mode-selector {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.view-mode-selector button {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.view-mode-selector button.active {
+  background-color: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+/* Styles for the total column */
+.total-column {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  min-width: 100px;
+}
+
+.total-cell {
+  background-color: #f9f9f9;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Navigation container */
+.navigation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Month navigation */
+.month-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .view-mode-selector {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .week-navigation, .month-navigation {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .search-container {
+    flex-direction: column;
+  }
 }

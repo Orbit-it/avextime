@@ -3,7 +3,8 @@ import './Pointage.css'; // Import the CSS file for styling
 import { ListItem, ListItemText, Avatar, ListItemAvatar } from '@mui/material';
 import { yellow, blue } from '@mui/material/colors';
 import axios from 'axios';
-import apiconfig from '../config/Endpoint'
+import apiconfig from '../config/Endpoint';
+import AttendanceDetailsModal from '../components/AttendanceDetailsModal';
 
 function Pointage() {
   // State to manage the current week's start date (Monday)
@@ -18,6 +19,28 @@ function Pointage() {
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [attendances, setAttendances] = useState([]);
+  
+  const [modalData, setModalData] = useState({
+    isOpen: false,
+    employee: null,
+    date: null,
+    dailyAttendances: []
+  });
+
+   // Fonction pour ouvrir le modal avec les données
+   const openModal = (employee, date, dailyAttendances) => {
+    setModalData({
+      isOpen: true,
+      employee,
+      date,
+      dailyAttendances
+    });
+  };
+
+  // Fonction pour fermer le modal
+  const closeModal = () => {
+    setModalData(prev => ({...prev, isOpen: false}));
+  };
 
   // Fetch departments and employees from the API
       useEffect(() => {
@@ -141,7 +164,8 @@ function Pointage() {
     const matchesDepartment =
       selectedDepartment === 'Tous' || employee.department_id == selectedDepartment;
 
-    return matchesSearchTerm && matchesDepartment;
+
+    return matchesSearchTerm && matchesDepartment  && employee.is_active;
   });
 
   return (
@@ -218,14 +242,24 @@ function Pointage() {
                 .filter((p) => p.employee_id === employee.attendance_id && p.date === formatDate(date));
 
               return (
-                <td key={formatDate(date)}>
-                    <div className={dailyAttendances.length > 0 ? dailyAttendances[0].status : "cell-miss"}>
+                <td 
+                key={formatDate(date)}
+                onDoubleClick={() => openModal(employee, date, dailyAttendances)}>
+                    <div className={
+                        dailyAttendances.length > 0
+                          ? dailyAttendances[0].is_anomalie
+                            ? "anomalie" // Classe spéciale pour les anomalies
+                            : dailyAttendances[0].is_today
+                              ? "today" // Classe spéciale pour aujourd'hui
+                              : dailyAttendances[0].status // Cas normal
+                          : "cell-miss" // Cas par défaut si tableau vide
+                      }>
                     {dailyAttendances.length > 0 ? (
                       <> 
                         {(dailyAttendances[0].has_night_shift && !dailyAttendances[0].isholidays &&
                          !dailyAttendances[0].is_conge && !dailyAttendances[0].islayoff &&
                          !dailyAttendances[0].is_congex && !dailyAttendances[0].is_maladie
-                         && !dailyAttendances[0].is_accident
+                         && !dailyAttendances[0].is_accident && !dailyAttendances[0].is_anomalie  && dailyAttendances[0].getin
                         ) && (
                           <>
                           <p>
@@ -238,10 +272,10 @@ function Pointage() {
                         { (!dailyAttendances[0].has_night_shift && !dailyAttendances[0].isholidays &&
                           !dailyAttendances[0].is_conge && !dailyAttendances[0].islayoff && 
                           !dailyAttendances[0].is_congex && !dailyAttendances[0].is_maladie
-                          && !dailyAttendances[0].is_accident
+                          && !dailyAttendances[0].is_accident && !dailyAttendances[0].is_anomalie  && dailyAttendances[0].getin
                         ) && (
                            <p>
-                           🕒 {dailyAttendances[0].getin || "- -:- -"} ➡️ {dailyAttendances[0].getout || "- -:- -"} 
+                           🕒 {dailyAttendances[0].getin || "- -:- -"} ➡️ {dailyAttendances[0].getout || "- -:- -"} <br/>
                            <span className={"status-dot status-"+dailyAttendances[0].status}></span>
                            ⏱️{dailyAttendances[0].hours_worked || "00"} <span style={{fontSize:10}} >HEURES TRAV</span>
                          </p>
@@ -272,9 +306,15 @@ function Pointage() {
                           </p>
                         )}
 
-                        {(dailyAttendances[0].is_congex && dailyAttendances[0].status == 'rdv_medical') && (
+                        {(dailyAttendances[0].status == 'rdv_medical') && (
                           <p>
                             <span >RDV MEDICAL</span> <br />
+                          </p>
+                        )}
+
+                        {(dailyAttendances[0].status == 'absent' && !dailyAttendances[0].getin && !dailyAttendances[0].getout && !dailyAttendances[0].is_weekend && !dailyAttendances[0].is_today) && (
+                          <p>
+                            <span >ABSENT</span> <br />
                           </p>
                         )}
 
@@ -289,21 +329,54 @@ function Pointage() {
                             <span >ACCIDENT DE TRAVAIL</span> <br />
                           </p>
                         )}
+
+                        {dailyAttendances[0].is_anomalie && (
+                          <p>
+                            <p>
+                           🕒 {dailyAttendances[0].getin || "- -:- -"} ➡️ {dailyAttendances[0].getout || "- -:- -"} <br/>
+                           <span className={"status-dot status-map"}></span> <br/>
+                           <span >Anomalie</span>
+                         </p>
+                          </p>
+                        )}
+
+                        
                        
                       </>
                     ) : (
                       <p>Off</p>
                     )}
-                  </div>
+                    </div>
+
                 </td>
               );
             })}
 
               </tr>
             ))}
+
+<AttendanceDetailsModal
+    isOpen={modalData.isOpen}
+    onClose={closeModal}
+    employee={modalData.employee}
+    date={modalData.date}
+    dailyAttendances={modalData.dailyAttendances}
+    onEdit={true}
+    onSaveSuccess={() => {
+      fetchAttendances();
+      setModalData({
+        isOpen: false,
+        employee: null,
+        date: null,
+        dailyAttendances: []
+      });
+    }}
+  />
+            
           </tbody>
         </table>
       </div>
+
     </div>
   );
 }

@@ -206,6 +206,7 @@ const MachinesPage = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>ID</TableCell>
               <TableCell>Machine</TableCell>
               <TableCell>Adresse IP</TableCell>
               <TableCell>Port</TableCell>
@@ -216,6 +217,7 @@ const MachinesPage = () => {
           <TableBody>
             {machines.map((machine) => (
               <TableRow key={machine.id}>
+                <TableCell>{machine.id}</TableCell>
                 <TableCell>{machine.device_name}</TableCell>
                 <TableCell>{machine.ip_address}</TableCell>
                 <TableCell>{machine.port}</TableCell>

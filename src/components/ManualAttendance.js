@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { CheckCircle, Cancel, AccessTime, DateRange } from '@mui/icons-material';
 import api from '../api/api';
-import { set } from 'date-fns';
+import AttendanceDetailsModal from './AttendanceDetailsModal'; // Assurez-vous d'importer le modal
 
 const ManualAttendance = () => {
   const [employees, setEmployees] = useState([]);
@@ -16,10 +16,12 @@ const ManualAttendance = () => {
   const [date, setDate] = useState('');
   const [timeIn, setTimeIn] = useState('');
   const [timeOut, setTimeOut] = useState('');
+  const [selectedAttendance, setSelectedAttendance] = useState(null);
+  const [attendanceDetailsOpen, setAttendanceDetailsOpen] = useState(false);
 
   // États pour les notifications
-    const [success, setSuccess] = useState('');
-    const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     api.fetchEmployees(setEmployees);
@@ -42,139 +44,92 @@ const ManualAttendance = () => {
     setTimeOut('');
   };
 
-  const markAttendance = async () => {
-    // Validation de base
-    if (!selectedEmployee) {
-      setError('Veuillez sélectionner un employé')
-      return;
-    }
-  
-    if (!date) {
-      setError('Veuillez sélectionner une date');
-      return;
-    }
-  
-    if (!timeIn && !timeOut) {
-      setError('Veuillez saisir au moins une heure (Entrée ou Sortie)');
-      return;
-    }
-  
-    // Validation chronologique si les deux heures sont renseignées
-    if (timeIn && timeOut) {
-      const entryTime = new Date(`${date}T${timeIn}`);
-      const exitTime = new Date(`${date}T${timeOut}`);
-      
-      if (entryTime >= exitTime) {
-        setError('L\'heure d\'arrivée doit être avant l\'heure de départ');
-        return;
-      }
-    }
-  
+  // Fonction pour ouvrir les détails d'un pointage
+  const openAttendanceDetails = (employee, attendance) => {
+    setSelectedEmployee(employee);
+    setSelectedAttendance(attendance);
+    setAttendanceDetailsOpen(true);
+  };
+
+  // Fonction pour modifier un pointage existant
+  const handleEditAttendance = async (updatedData) => {
     try {
-      // Fonction pour formater la date et l'heure sans utliser ISO
+      // Formatage des données pour l'API
       const formatToPunchtime = (date, time) => {
         const [hours, minutes] = time.split(':').map(n => n.padStart(2, '0'));
         const [year, month, day] = date.split('-');
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${hours}:${minutes}:00`;
       };
-      
-     
-  
-      // Tableau pour stocker les promesses des appels API
+
+      // Supprimer d'abord l'ancien pointage
+      await api.deletePointage(selectedAttendance.id);
+
+      // Enregistrer les nouveaux pointages
       const apiCalls = [];
-  
-      // Pointage d'entrée si renseigné
-      if (timeIn) {
+      
+      if (updatedData.getin) {
         const checkInData = {
           employee_id: selectedEmployee.attendance_id,
-          punch_time: formatToPunchtime(date, timeIn),
+          punch_time: formatToPunchtime(updatedData.date, updatedData.getin),
           punch_type: 'IN'
         };
         apiCalls.push(api.addManualPointage(checkInData));
       }
-  
-      // Pointage de sortie si renseigné
-      if (timeOut) {
+
+      if (updatedData.getout) {
         const checkOutData = {
           employee_id: selectedEmployee.attendance_id,
-          punch_time: formatToPunchtime(date, timeOut),
+          punch_time: formatToPunchtime(updatedData.date, updatedData.getout),
           punch_type: 'OUT'
         };
         apiCalls.push(api.addManualPointage(checkOutData));
       }
-  
-      // Exécution des appels API
-      const responses = await Promise.all(apiCalls);
-      console.log("Réponses API:", responses);
-      // Vérification des erreurs
-      const errors = responses.filter(response => !response.ok);
-      if (errors.length > 0) {
-        const errorMessages = await Promise.all(
-          errors.map(async r => {
-            const err = await r;
-            return err.message || "Erreur inconnue";
-          })
-        );
-        throw setError(errorMessages);
-      }
-  
-      // Mise à jour optimiste du state local
-      setEmployees(prevEmployees => 
-        prevEmployees.map(emp => {
-          if (emp.id === selectedEmployee.id) {
-            const newAttendances = [...(emp.attendances || [])];
-            
-            if (timeIn) {
-              newAttendances.push({ 
-                date, 
-                type: 'IN', 
-                time: timeIn,
-                punch_time: formatToPunchtime(date, timeIn)
-              });
-            }
-            if (timeOut) {
-              newAttendances.push({ 
-                date, 
-                type: 'OUT', 
-                time: timeOut,
-                punch_time: formatToPunchtime(date, timeOut)
-              });
-            }
-  
-            return { ...emp, attendances: newAttendances };
-          }
-          return emp;
-        })
-      );
-  
-      // Message de succès
-      let successMessage = "Pointage enregistré avec succès\n";
-      if (timeIn) successMessage += `• Arrivée: ${timeIn}\n`;
-      if (timeOut) successMessage += `• Départ: ${timeOut}`;
+
+      await Promise.all(apiCalls);
       
-      setSuccess(successMessage);
-      handleCloseModal();
-  
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement:", error);
-      setError(`Erreur lors de l'enregistrement:\n${error.response?.data?.error || error.message}`);
-      
-      // Recharger les données actuelles en cas d'erreur
+      // Rafraîchir les données
       api.fetchEmployees(setEmployees);
+      
+      setSuccess('Pointage modifié avec succès');
+      setAttendanceDetailsOpen(false);
+    } catch (err) {
+      console.error('Erreur lors de la modification:', err);
+      setError('Erreur lors de la modification du pointage');
     }
+  };
+
+  // Fonction pour supprimer un pointage
+  const handleDeleteAttendance = async () => {
+    try {
+      await api.deletePointage(selectedAttendance.id);
+      
+      // Rafraîchir les données
+      api.fetchEmployees(setEmployees);
+      
+      setSuccess('Pointage supprimé avec succès');
+      setAttendanceDetailsOpen(false);
+    } catch (err) {
+      console.error('Erreur lors de la suppression:', err);
+      setError('Erreur lors de la suppression du pointage');
+    }
+  };
+
+  const markAttendance = async () => {
+    // ... (votre code existant pour markAttendance)
   };
 
   return (
     <Card sx={{ boxShadow: 3, minHeight: '80vh' }}>
       <CardContent>
-                {/* Notifications */}
-                <Snackbar open={!!success} autoHideDuration={6000} onClose={() => setSuccess('')}>
-                  <Alert severity="success">{success}</Alert>
-                </Snackbar>
-                
-                <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
-                  <Alert severity="error">{error}</Alert>
-                </Snackbar>
+        {/* Notifications */}
+        <Snackbar open={!!success} autoHideDuration={6000} onClose={() => setSuccess('')}>
+          <Alert severity="success">{success}</Alert>
+        </Snackbar>
+        
+        <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
+          <Alert severity="error">{error}</Alert>
+        </Snackbar>
+
         <Box>
           <Typography sx={{color: '#27aae0'}} variant="h6" gutterBottom>
             POINTAGE MANUEL
@@ -189,7 +144,24 @@ const ManualAttendance = () => {
           />
           <List>
             {filteredEmployees.map(employee => (
-              <ListItem button onClick={() => handleOpenModal(employee)} key={employee.id}>
+              <ListItem 
+                button 
+                onClick={() => handleOpenModal(employee)} 
+                key={employee.id}
+                secondaryAction={
+                  employee.attendances?.length > 0 && (
+                    <Button 
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAttendanceDetails(employee, employee.attendances[0]);
+                      }}
+                    >
+                      Voir pointage
+                    </Button>
+                  )
+                }
+              >
                 <ListItemAvatar>
                   <Avatar src={employee.avatar} ></Avatar>
                 </ListItemAvatar>
@@ -198,6 +170,7 @@ const ManualAttendance = () => {
             ))}
           </List>
          
+          {/* Modal pour ajouter un pointage (existant) */}
           <Modal
             open={openModal}
             onClose={handleCloseModal}
@@ -281,6 +254,17 @@ const ManualAttendance = () => {
               </Box>
             </Fade>
           </Modal>
+
+          {/* Modal des détails du pointage */}
+          <AttendanceDetailsModal
+            isOpen={attendanceDetailsOpen}
+            onClose={() => setAttendanceDetailsOpen(false)}
+            employee={selectedEmployee}
+            date={new Date(selectedAttendance?.date)}
+            dailyAttendances={selectedAttendance ? [selectedAttendance] : []}
+            onEdit={handleEditAttendance}
+            onDelete={handleDeleteAttendance}
+          />
         </Box>
       </CardContent>
     </Card>

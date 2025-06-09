@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { grey } from '@mui/material/colors';
 import { Menu as MenuIcon, Notifications, AccountCircle } from '@mui/icons-material';
-import { FaArtstation, FaClock, FaUsers, FaTablet } from "react-icons/fa";
+import { FaArtstation, FaClock, FaUsers, FaTablet, FaBook } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 import api from "../api/api";
@@ -18,6 +18,7 @@ const navItems = [
   { path: "/pointage", icon: <FaClock className="icon" />, label: "Pointages" },
   { path: "/gestionrh", icon: <FaUsers className="icon" />, label: "Service RH" },
   { path: "/machines", icon: <FaTablet className="icon" />, label: "Machines" },
+  { path: "/synthese", icon: <FaBook className="icon" />, label: "Synthese" },
 ];
 
 const Navbar = () => {
@@ -115,7 +116,7 @@ const Navbar = () => {
           alignItems: 'center',
           padding: { xs: '0 16px', md: '0 40px' }
         }}>
-          {/* Logo */}
+          {/* Logo 
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <NavLink to="/" aria-label="Home">
               <img 
@@ -126,7 +127,7 @@ const Navbar = () => {
                 loading="lazy"
               />
             </NavLink>
-          </Box>
+          </Box>  */}
 
           {user && (
             <>
