@@ -8,20 +8,24 @@ import {
   Divider,
   Grid,
   CircularProgress,
-  Box
+  Box,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Paper,
+  Avatar,
+  Chip
 } from '@mui/material';
 import { 
-  LineChart, 
   PieChart, 
-  Line, 
   Pie, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+  Cell, 
   Tooltip, 
   Legend, 
-  ResponsiveContainer,
-  Cell
+  ResponsiveContainer
 } from 'recharts';
 import {
   AbsenteeismRate,
@@ -30,13 +34,37 @@ import {
   LeaveManagement,
   KPIGrid
 } from '../components/kpi_componets';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { PictureAsPdf, GridOn } from '@mui/icons-material';
+import * as XLSX from 'xlsx';
 
-// Couleurs constantes pour les graphiques
-const CHART_COLORS = {
-  PRESENCE: '#4caf50',
-  ABSENCE: '#f44336',
-  LEAVE: '#2196f3',
-  LATE: '#ff9800'
+
+// Couleurs pour les différents statuts
+const STATUS_COLORS = {
+  absent: '#808080',
+  cg_maladie: '#ffa500',
+  conge: '#008000',
+  accident: '#a329f7',
+  map: '#dc3545',
+  default: '#17a2b8'
+};
+
+// Traduction des statuts
+const translateStatus = (status) => {
+  const translations = {
+    absent: 'Absent',
+    map: 'Mise à pied',
+    cg_maladie: 'Congé maladie',
+    conge: 'Congé',
+    accident: 'Accident de Travail',
+    cg_dcs: 'Congé Décès Parental',
+    cg_naissance: 'Congé Naissance',
+    cg_mariage: 'Congé Mariage',
+    cg_cir: 'Congé Circoncision',
+    cg_exp: 'Congé Exceptionnel',
+  };
+  return translations[status] || status;
 };
 
 const Dashboard = () => {
@@ -49,16 +77,10 @@ const Dashboard = () => {
       try {
         setLoading(true);
         const response = await api.fetchDashboardDatas();
-        
-        if (!response.data) {
-          throw new Error('No data received');
+        if (!response.success) {
+          throw new Error('Erreur lors de la récupération des données');
         }
-        
-        setDashboardData({
-          ...response.data,
-          leaveRequests: response.data.leaveRequests || 23, // Valeur par défaut si non fournie
-          currentMonth: new Date().toLocaleString('fr-FR', { month: 'long' })
-        });
+        setDashboardData(response.data);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError(err.message);
@@ -70,22 +92,141 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  // Données pour les graphiques (peuvent être remplacées par des données dynamiques)
-  const monthlyData = dashboardData?.monthlyStats || [
-    { name: 'Sem1', presence: 90, absence: 10 },
-    { name: 'Sem2', presence: 84, absence: 16 },
-    { name: 'Sem3', presence: 0, absence: 0 },
-    { name: 'Sem4', presence: 0, absence: 0 },
-    { name: 'Sem5', presence: 0, absence: 0 },
-  ];
+  const generateAbsencePDF = () => {
+    const doc = new jsPDF();
+    
+    // Titre
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('LISTE DES ABSENTS', 105, 15, { align: 'center' });
+    
+    // Date
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.text(
+      `Date: ${new Date(dashboardData.date).toLocaleDateString('fr-FR', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      })}`,
+      105,
+      22,
+      { align: 'center' }
+    );
+    
+    // Total
+    doc.text(
+      `Total: ${dashboardData.absent_employees} absent(s)`,
+      105,
+      29,
+      { align: 'center' }
+    );
 
-  const employeeStatusData = dashboardData?.dailyStatus || [
-    { name: 'Présent', value: 65, color: CHART_COLORS.PRESENCE },
-    { name: 'Absent', value: 15, color: CHART_COLORS.ABSENCE },
-    { name: 'Congé', value: 12, color: CHART_COLORS.LEAVE },
-    { name: 'Retards', value: 8, color: CHART_COLORS.LATE },
-  ];
+    // Données du tableau
+    const tableData = dashboardData.absences
+      .filter(emp => emp.status !== 'present')
+      .map(employee => [
+        employee.employee_id,
+        employee.name.trim(),
+        translateStatus(employee.status),
+        { 
+          content: '',
+          styles: { 
+            fillColor: STATUS_COLORS[employee.status] || STATUS_COLORS.default,
+            textColor: STATUS_COLORS[employee.status] || STATUS_COLORS.default
+          } 
+        }
+      ]);
 
+    // En-têtes
+    const headers = [
+      { title: 'Matricule', dataKey: '0' },
+      { title: 'Nom', dataKey: '1' },
+      { title: 'Statut', dataKey: '2' },
+      { title: '', dataKey: '3' }
+    ];
+
+    // Options
+    const options = {
+      startY: 40,
+      headStyles: {
+        fillColor: '#2c3e50',
+        textColor: '#ffffff',
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 10 }
+      },
+      didDrawPage: function(data) {
+        // Pied de page
+        doc.setFontSize(10);
+        doc.setTextColor(150);
+        doc.text(
+          `Page ${doc.internal.getNumberOfPages()}`,
+          doc.internal.pageSize.getWidth() - 15,
+          doc.internal.pageSize.getHeight() - 10
+        );
+      }
+    };
+
+    // Génération du tableau
+    autoTable(doc, {
+      head: [headers.map(h => h.title)],
+      body: tableData.map(row => row.slice(0, 3)), // Exclure la colonne de couleur
+      ...options
+    });
+
+    // Sauvegarde
+    doc.save(`liste_absents_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+
+  const generateAbsenceExcel = () => {
+    // Préparer les données pour Excel
+    const excelData = dashboardData.absences
+      .filter(emp => emp.status !== 'present')
+      .map(employee => ({
+        'Matricule': employee.employee_id,
+        'Nom': employee.name.trim(),
+        'Statut': translateStatus(employee.status)
+      }));
+
+    // Créer un nouveau workbook
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Ajouter la feuille au workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Liste des absents");
+
+    // Ajouter une feuille de synthèse
+    const summaryData = [
+      ['Date', new Date(dashboardData.date).toLocaleDateString('fr-FR')],
+      ['Total des absents', dashboardData.absent_employees],
+      ['Taux d\'absence', `${dashboardData.absence_rate}%`],
+      ['Taux de présence', `${dashboardData.presence_rate}%`]
+    ];
+    
+    const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, summaryWs, "Synthèse");
+
+    // Générer le fichier Excel
+    XLSX.writeFile(wb, `liste_absents_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  // Préparer les données pour le graphique circulaire
+  const preparePieData = (data) => {
+    if (!data || !data.summary || !data.summary.by_status) return [];
+    
+    return Object.entries(data.summary.by_status).map(([status, value]) => ({
+      name: translateStatus(status),
+      value,
+      color: STATUS_COLORS[status] || STATUS_COLORS.default
+    }));
+  };
 
   if (loading) {
     return (
@@ -111,18 +252,15 @@ const Dashboard = () => {
     );
   }
 
+  const pieData = preparePieData(dashboardData);
+
   return (
     <div style={{ padding: '20px' }}>
-      
-      <Typography variant="subtitle1" gutterBottom>
-        Données pour: {dashboardData.currentMonth}
-      </Typography>
-      
       <KPIGrid>
-        <AbsenteeismRate rate={dashboardData.taux_absence} />
-        <PresenceRate rate={dashboardData.taux_presence} />
-        <WorkAccidents count={dashboardData.total_accident} />
-        <LeaveManagement count={dashboardData.total_conges} />
+        <AbsenteeismRate rate={dashboardData.absence_rate} />
+        <PresenceRate rate={dashboardData.presence_rate} />
+        <WorkAccidents count={dashboardData.summary?.by_status?.accident || 0} />
+        <LeaveManagement count={dashboardData.summary?.by_status?.conge || 0} />
       </KPIGrid>
 
       <Divider style={{ margin: '30px 0' }} />
@@ -131,39 +269,83 @@ const Dashboard = () => {
         <Grid item xs={12} md={7}>
           <Card>
             <CardHeader 
-              title="Tendances Mensuelles: Du 26 Mars au 25 Avril" 
-              subheader="Évolution des taux de présence et d'absence"
+              title={`Liste des absents - ${new Date(dashboardData.date).toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long' 
+              })}`}
+              subheader={`Total: ${dashboardData.absent_employees} absent(s)`}
+              action={
+                <div>
+                <Button
+                  variant="contained"
+                  color="info"
+                  startIcon={<PictureAsPdf />}
+                  onClick={generateAbsencePDF}
+                  style={{ marginRight: '10px' }}
+                >
+                  PDF
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<GridOn />}
+                  onClick={generateAbsenceExcel}
+                >
+                  Excel
+                </Button>
+              </div>
+              }
             />
-            <CardContent style={{ height: '300px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip 
-                    formatter={(value) => [`${value}%`, value === 'presence' ? 'Présence' : 'Absence']}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="presence" 
-                    stroke={CHART_COLORS.PRESENCE} 
-                    strokeWidth={2}
-                    name="Taux de Présence"
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="absence" 
-                    stroke={CHART_COLORS.ABSENCE} 
-                    strokeWidth={2}
-                    name="Taux d'Absence"
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent>
+              <Paper elevation={2} style={{ maxHeight: '500px', overflow: 'auto' }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Photo</TableCell>
+                      <TableCell>Nom</TableCell>
+                      <TableCell>Matricule</TableCell>
+                      <TableCell>Statut</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dashboardData.absences?.length > 0 ? (
+                      dashboardData.absences
+                        .filter(emp => emp.status !== 'present')
+                        .map((employee, index) => (
+                          <TableRow key={index} hover>
+                            <TableCell>
+                              <Avatar 
+                                alt={employee.name.trim()} 
+                                src={employee.avatar || '/default-avatar.png'} 
+                              />
+                            </TableCell>
+                            <TableCell>{employee.name.trim()}</TableCell>
+                            <TableCell>{employee.employee_id}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={translateStatus(employee.status)}
+                                style={{
+                                  backgroundColor: STATUS_COLORS[employee.status] || STATUS_COLORS.default,
+                                  color: 'white',
+                                  minWidth: 100
+                                }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center">
+                          <Typography variant="body1" color="textSecondary">
+                            Aucun absent aujourd'hui
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </Paper>
             </CardContent>
           </Card>
         </Grid>
@@ -171,28 +353,29 @@ const Dashboard = () => {
         <Grid item xs={12} md={5}>
           <Card>
             <CardHeader 
-              title="Statut des Employés (Aujourd'hui)" 
-              subheader={`Total: ${employeeStatusData.reduce((acc, curr) => acc + curr.value, 0)} employés`}
+              title="Répartition des absences" 
+              subheader={`Total: ${dashboardData.absent_employees} employé(s) absent(s)`}
             />
-            <CardContent style={{ height: '300px' }}>
+            <CardContent style={{ height: '400px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={employeeStatusData}
+                    data={pieData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
                     outerRadius={80}
+                    fill="#8884d8"
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent, value }) => `${name}: [${value}]  (${(percent * 100).toFixed(0)}%)`}
                   >
-                    {employeeStatusData.map((entry, index) => (
+                    {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value, name) => [`${value} employés`, name]}
+                    formatter={(value, name) => [`${value} employé(s)`, name]}
                   />
                   <Legend />
                 </PieChart>

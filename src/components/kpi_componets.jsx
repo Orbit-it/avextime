@@ -11,7 +11,7 @@ import {
 export const AbsenteeismRate = ({ rate }) => (
   <Card>
     <CardContent>
-      <Typography color="textSecondary">Taux d'Absentéisme</Typography>
+      <Typography color="textSecondary">Taux d'Absence</Typography>
       <Typography variant="h4">{rate}%</Typography>
     </CardContent>
   </Card>

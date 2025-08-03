@@ -191,7 +191,7 @@ const fetchDashboardDatas = async () => {
     try {
 
         const response = await axios.get(apiConfig.Endpoint.dashboard);
-        return response;
+        return response.data;
 
     } catch (error) {
         console.log("Erreur fetching data for dashboard from month_attendnce Table");

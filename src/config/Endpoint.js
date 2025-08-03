@@ -13,12 +13,14 @@ const Endpoint = {
     login: `${baseUri}/login`,
     pointage: `${baseUri}/manual-attendance`,
     weeks: `${baseUri}/weekly-attendance`,
+    month: `${baseUri}/month-attendance`,
     pointagesSummary: `${baseUri}/summary`,
-    dashboard: `${baseUri}/dashboard`,
+    dashboard: `${baseUri}/absences`,
     notif: `${baseUri}/notif`,
     shift: `${baseUri}/shifts`,
     machine: `${baseUri}/machines`,
     attendance: `${baseUri}/attendances`,
+    compute: `${baseUri}/machines/compute`,
 };
 
 export default { Endpoint, baseUri, server };

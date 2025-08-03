@@ -879,6 +879,15 @@ const EmployeeModal = ({
                 onChange={(e) => setEmployee({ ...employee, address: e.target.value })}
                 sx={{ mb: 2 }}
               />
+              <TextField
+                fullWidth
+                label="Plafond Assiduité"
+                disabled
+                size="small"
+                value={employee.plafond}
+                onChange={(e) => setEmployee({ ...employee, plafond: e.target.value })}
+                sx={{ mb: 2 }}
+              />
 
           {isEditMode && (
             <>

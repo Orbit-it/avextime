@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Box,
@@ -16,31 +16,52 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Chip,
   Stack,
+  CircularProgress,
+  Alert,
+  Collapse,
+  IconButton
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import { ImportExport } from '@mui/icons-material';
 import Add from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import colorButtonStyle from '../config/Color';
 import ExcelImportModal from '../components/ExcelUploader';
 import apiConfig from '../config/Endpoint';
+import DownloadModal from '../components/DownloadModal';
 
 const MachinesPage = () => {
-  // Données fictives des machines
   const [machines, setMachines] = useState([]);
-  const [selectedMachine, setSelectedMachine] = useState(null); // Machine sélectionnée pour édition/suppression
-  const [editModalOpen, setEditModalOpen] = useState(false); // État du modal d'édition
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false); // État du modal de suppression
+  const [selectedMachine, setSelectedMachine] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [loadingDownload, setLoadingDownload] = useState(false);
+  const [failedMachines, setFailedMachines] = useState([]);
+  const [showFailedMachines, setShowFailedMachines] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [newMachine, setNewMachine] = useState({
+    device_name: '',
+    ip_address: '',
+    port: '',
+    location: '',
+  });
 
-  // Charger les machines au chargement de la page
+  const [downloadStatus, setDownloadStatus] = useState({
+    open: false,
+    progress: 0,
+    message: '',
+    machine: ''
+  });
+
   useEffect(() => {
     fetchMachines();
   }, []);
 
-  // function to fetch data from the API
   const fetchMachines = async () => {
     try {
       const response = await axios.get(apiConfig.Endpoint.machine);
@@ -50,7 +71,6 @@ const MachinesPage = () => {
     }
   };
 
-  // function to add a new machine
   const addMachine = async (machine) => {
     try {
       const response = await axios.post(apiConfig.Endpoint.machine, machine);
@@ -60,7 +80,6 @@ const MachinesPage = () => {
     }
   };
 
-  // function to update a machine
   const updateMachine = async (machine) => {
     try {
       const response = await axios.put(`${apiConfig.Endpoint.machine}/${machine.id}`, machine);
@@ -72,7 +91,6 @@ const MachinesPage = () => {
     }
   };
 
-  // function to delete a machine
   const deleteMachine = async (id) => {
     try {
       await axios.delete(`${apiConfig.Endpoint.machine}/${id}`);
@@ -82,20 +100,129 @@ const MachinesPage = () => {
     }
   };
 
-  const handleDownloadAttendance = async (machine) => {
-    try {
-      const response = await axios.post(`${apiConfig.Endpoint.machine}/${machine.id}/attendance`, { machine });
-      console.log('Attendance data:', response.data);
-      // Handle the response data as needed (e.g., download a file, show a message, etc.)
-    } catch (error) {
-      console.error('Error downloading attendance:', error);
-    }
-  };
+  // Frontend: handleDownloadAllAttendance function
+const handleDownloadAllAttendance = async () => {
+  setLoadingDownload(true);
+  setFailedMachines([]);
+  setShowFailedMachines(false);
+  
+  try {
+    const failed = [];
+    
+    // Initial status
+    setDownloadStatus({
+      open: true,
+      progress: 0,
+      machine: '',
+      message: "Début du processus..."
+    });
 
-  // Ajouter une machine
+    // Phase 1: Download all machine data
+    for (const machine of machines) {
+      setDownloadStatus(prev => ({
+        ...prev,
+        machine: machine.device_name,
+        message: `Téléchargement ${machine.device_name}...`
+      }));
+
+      try {
+        const response = await axios.post(
+          `${apiConfig.Endpoint.machine}/${machine.id}/attendance`, 
+          { machine },
+          {
+            onDownloadProgress: (progressEvent) => {
+              const percentCompleted = progressEvent.total 
+                ? Math.round((progressEvent.loaded * 25) / progressEvent.total) // First 25% of progress
+                : 0;
+              
+              setDownloadStatus(prev => ({
+                ...prev,
+                progress: percentCompleted,
+                message: `Téléchargement (${machine.device_name}) ${percentCompleted}%`
+              }));
+            },
+            responseType: 'blob'
+          }
+        );
+
+        setDownloadStatus(prev => ({
+          ...prev,
+          progress: 25,
+          message: `${machine.device_name}: Téléchargement réussi!`,
+        }));
+
+      } catch (error) {
+        failed.push({
+          name: machine.device_name,
+          error: error.message || 'Erreur inconnue'
+        });
+        
+        setDownloadStatus(prev => ({
+          ...prev,
+          message: `${machine.device_name}: Échec du téléchargement`,
+        }));
+      }
+    }
+
+    setFailedMachines(failed);
+
+    // Phase 2: Trigger compute process
+    setDownloadStatus(prev => ({
+      ...prev,
+      progress: 30,
+      message: "Début du calcul des pointages...",
+      machine: ''
+    }));
+
+    const computeResponse = await axios.post(`${apiConfig.Endpoint.compute}`, {
+      machines: machines.map(m => m.id),
+      failedMachines: failed.map(f => f.name)
+    }, {
+      onDownloadProgress: (progressEvent) => {
+        // Progress from 30% to 100% during compute
+        const percentCompleted = 30 + Math.round(
+          (progressEvent.loaded * 70) / (progressEvent.total || 1)
+        );
+        
+        setDownloadStatus(prev => ({
+          ...prev,
+          progress: percentCompleted,
+          message: `Calcul en cours... ${percentCompleted}%`
+        }));
+      }
+    });
+
+    // Final status
+    setDownloadStatus(prev => ({
+      ...prev,
+      progress: 100,
+      message: computeResponse.data.message || "Traitement terminé avec succès!",
+    }));
+
+    if (failed.length > 0) {
+      setShowFailedMachines(true);
+    }
+
+    // Auto-close after 3 seconds
+    setTimeout(() => {
+      setDownloadStatus(prev => ({ ...prev, open: false }));
+    }, 3000);
+    
+  } catch (error) {
+    setDownloadStatus({
+      open: true,
+      progress: 0,
+      machine: '',
+      message: `Erreur: ${error.response?.data?.message || error.message}`
+    });
+  } finally {
+    setLoadingDownload(false);
+  }
+};
+
   const handleAdd = () => {
     if (newMachine.device_name && newMachine.ip_address && newMachine.port) {
-      addMachine(newMachine); // Appeler la fonction pour ajouter une machine
+      addMachine(newMachine);
       setNewMachine({
         device_name: '',
         ip_address: '',
@@ -106,19 +233,16 @@ const MachinesPage = () => {
     }
   };
 
-  // Ouvrir le modal d'édition
   const handleEditClick = (machine) => {
     setSelectedMachine(machine);
     setEditModalOpen(true);
   };
 
-  // Ouvrir le modal de suppression
   const handleDeleteClick = (machine) => {
     setSelectedMachine(machine);
     setDeleteModalOpen(true);
   };
 
-  // Fermer les modals
   const handleCloseModals = () => {
     setEditModalOpen(false);
     setDeleteModalOpen(false);
@@ -126,40 +250,27 @@ const MachinesPage = () => {
     setAddModalOpen(false);
   };
 
-  // Sauvegarder les modifications
   const handleSave = () => {
     if (selectedMachine) {
-      setMachines((prevMachines) =>
-        prevMachines.map((machine) =>
-          machine.id === selectedMachine.id ? selectedMachine : machine
-        )
-      );
       updateMachine(selectedMachine);
       handleCloseModals();
     }
   };
 
-  // Supprimer une machine
   const handleDelete = () => {
     if (selectedMachine) {
-      setMachines((prevMachines) =>
-        prevMachines.filter((machine) => machine.id !== selectedMachine.id)
-      );
       deleteMachine(selectedMachine.id);
       handleCloseModals();
     }
   };
 
-  // Validation de l'adresse IP
   const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  
   const handleIpChange = (e) => {
     const value = e.target.value;
-  
-    // Autoriser uniquement les chiffres et les points
     const filteredValue = value.replace(/[^0-9.]/g, '');
   
-    // Valider l'adresse IP
-    if (ipRegex) {
+    if (ipRegex.test(filteredValue)) {
       setNewMachine({ ...newMachine, ip_address: filteredValue });
       setError('');
     } else {
@@ -167,41 +278,74 @@ const MachinesPage = () => {
     }
   };
 
-
-  // État pour le modal d'ajout
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [error, setError] = useState(''); // Message d'erreur pour l'adresse IP
-  const [newMachine, setNewMachine] = useState({
-    device_name: '',
-    ip_address: '',
-    port: '',
-    location: '',
-  });
-
   return (
     <Box sx={{ p: 3 }}>
       <Typography sx={{color: '#27aae0'}} variant="h6" gutterBottom>
-         GESTION DES POINTEUSES
+        GESTION DES POINTEUSES
       </Typography>
-      
+
       <Stack direction="row" spacing={2} sx={{mb: 2}}>
-      <Button
-        variant="contained"
-        sx={{mb: 1, ml:1, ...colorButtonStyle.primary}}
-        onClick={() => setAddModalOpen(true)}
-        startIcon={<Add />}
+        <Button
+          variant="contained"
+          sx={{mb: 1, ml:1, ...colorButtonStyle.primary}}
+          onClick={() => setAddModalOpen(true)}
+          startIcon={<Add />}
         >
-        Ajouter une Machine
-      </Button>
-      <Button 
-        variant="contained" 
-        onClick={() => setImportModalOpen(true)}
-        startIcon={<CloudDownloadIcon />}
-      >
-        Importer depuis Excel
-      </Button>
+          Ajouter une Machine
+        </Button>
+        <Button 
+          variant="contained" 
+          onClick={() => setImportModalOpen(true)}
+          startIcon={<ImportExport />}
+        >
+          Importer depuis Excel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleDownloadAllAttendance}
+          startIcon={
+            loadingDownload ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <CloudDownloadIcon />
+            )
+          }
+          disabled={loadingDownload}
+          color={failedMachines.length > 0 ? 'warning' : 'info'}
+          sx={{ minWidth: 250 }}
+        >
+          {loadingDownload ? 'Téléchargement...' : 'Télécharger tous les pointages'}
+        </Button>
       </Stack>
-      {/* Tableau des machines */}
+
+      <Collapse in={showFailedMachines && failedMachines.length > 0}>
+        <Alert 
+          severity="warning"
+          action={
+            <IconButton
+              aria-label="close"
+              color="inherit"
+              size="small"
+              onClick={() => setShowFailedMachines(false)}
+            >
+              <CloseIcon fontSize="inherit" />
+            </IconButton>
+          }
+          sx={{ mb: 2 }}
+        >
+          <Typography variant="subtitle1" gutterBottom>
+            Machines avec des erreurs de téléchargement:
+          </Typography>
+          <ul style={{ marginTop: 0, paddingLeft: 20 }}>
+            {failedMachines.map((machine, index) => (
+              <li key={index}>
+                <strong>{machine.name}</strong>: {machine.error}
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      </Collapse>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -240,14 +384,6 @@ const MachinesPage = () => {
                   >
                     Supprimer
                   </Button>
-                  <Button
-                    startIcon={<CloudDownloadIcon />}
-                    onClick={() => handleDownloadAttendance(machine)}
-                    sx={{ mr: 1 }}
-                    color="primary"
-                  >
-                    Télécharger
-                  </Button>   
                 </TableCell>
               </TableRow>
             ))}
@@ -258,12 +394,16 @@ const MachinesPage = () => {
       <ExcelImportModal 
         open={importModalOpen}
         onClose={() => setImportModalOpen(false)}
-        machineId="1" // ID de la machine sélectionnée
+        machineId="1"
       />
-        
 
+      <DownloadModal 
+        open={downloadStatus.open}
+        progress={downloadStatus.progress}
+        message={downloadStatus.message}
+        machine_name={downloadStatus.machine}
+      />
 
-      {/* Modal d'ajout */}
       <Dialog open={addModalOpen} onClose={handleCloseModals}>
         <DialogTitle>Ajouter une Machine</DialogTitle>
         <DialogContent>
@@ -273,40 +413,42 @@ const MachinesPage = () => {
               label="Nom de la Machine"
               value={newMachine.device_name}
               onChange={(e) => setNewMachine({ ...newMachine, device_name: e.target.value })}
+              required
             />
-             <TextField
+            <TextField
               size='small'
               label="Adresse IP"
               value={newMachine.ip_address}
               onChange={handleIpChange}
-              error={!!error} // Afficher une bordure rouge en cas d'erreur
-              helperText={error} // Afficher le message d'erreur
+              error={!!error}
+              helperText={error}
+              required
             />
             <TextField
               size='small'
               label="Port"
               value={newMachine.port}
               onChange={(e) => setNewMachine({ ...newMachine, port: e.target.value })}
+              required
             />
             <TextField
               size='small'
               label="Site"
               value={newMachine.location}
-              onChange={(e) =>
-                setNewMachine({ ...newMachine, location: e.target.value }) 
-              }
+              onChange={(e) => setNewMachine({ ...newMachine, location: e.target.value })}
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseModals} variant='contained' sx={{...colorButtonStyle.secondary}} >Annuler</Button>
-          <Button onClick={handleAdd}  variant='contained' sx={{...colorButtonStyle.primary}}> 
+          <Button onClick={handleCloseModals} variant='contained' sx={{...colorButtonStyle.secondary}}>
+            Annuler
+          </Button>
+          <Button onClick={handleAdd} variant='contained' sx={{...colorButtonStyle.primary}}>
             Ajouter
-          </Button>   
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal d'édition */}
       <Dialog open={editModalOpen} onClose={handleCloseModals}>
         <DialogTitle>Éditer la Machine</DialogTitle>
         <DialogContent>
@@ -339,26 +481,24 @@ const MachinesPage = () => {
               <TextField
                 size='small'
                 label="Site"
-                value={selectedMachine.location ? selectedMachine.location : ''}
+                value={selectedMachine.location || ''}
                 onChange={(e) =>
-                  setSelectedMachine({
-                    ...selectedMachine,
-                    location: { location: e.target.value },
-                  })
-                } 
+                  setSelectedMachine({ ...selectedMachine, location: e.target.value })
+                }
               />
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseModals} variant='contained' sx={{...colorButtonStyle.secondary}} >Annuler</Button>
+          <Button onClick={handleCloseModals} variant='contained' sx={{...colorButtonStyle.secondary}}>
+            Annuler
+          </Button>
           <Button onClick={handleSave} variant='contained' sx={{...colorButtonStyle.primary}}>
             Sauvegarder
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal de confirmation de suppression */}
       <Dialog open={deleteModalOpen} onClose={handleCloseModals}>
         <DialogTitle>Confirmer la Suppression</DialogTitle>
         <DialogContent>

@@ -16,6 +16,7 @@ const Planning = () => {
   const [employees, setEmployees] = useState([]);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openExceptionDialog, setOpenExceptionDialog] = useState(false);
   const [editShiftId, setEditShiftId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -26,7 +27,17 @@ const Planning = () => {
     end_date: '',
     schedule: daysOfWeek.reduce((acc, day) => ({ ...acc, [day.toLowerCase()]: { start: '', end: '', break: '', off: false } }), {}),
   });
-  const [editShift, setEditShift] = useState(null); // État distinct pour la modification
+  const [editShift, setEditShift] = useState(null);
+  const [exceptionShift, setExceptionShift] = useState({
+    shift_name: '',
+    selectedDepartment: '',
+    employee_ids: [],
+    date: '',
+    start_time: '',
+    end_time: '',
+    break_duration: ''
+  });
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -194,6 +205,71 @@ const Planning = () => {
     }
   };
 
+  const handleAddExceptionShift = async () => {
+    if (!exceptionShift.shift_name || !exceptionShift.selectedDepartment || 
+        exceptionShift.employee_ids.length === 0 || !exceptionShift.date || 
+        !exceptionShift.start_time || !exceptionShift.end_time) {
+      setError('Veuillez remplir tous les champs obligatoires.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        shift_name: exceptionShift.shift_name,
+        employee_ids: exceptionShift.employee_ids,
+        date: exceptionShift.date,
+        start_time: exceptionShift.start_time,
+        end_time: exceptionShift.end_time,
+        break_duration: exceptionShift.break_duration || 0,
+        is_exception: true
+      };
+
+      await axios.post(apiConfig.Endpoint.shift, payload);
+      fetchData();
+      setOpenExceptionDialog(false);
+      setExceptionShift({
+        shift_name: '',
+        selectedDepartment: '',
+        employee_ids: [],
+        date: '',
+        start_time: '',
+        end_time: '',
+        break_duration: ''
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDepartmentChangeForException = (event) => {
+    const departmentId = event.target.value;
+    setExceptionShift(prev => ({
+      ...prev,
+      selectedDepartment: departmentId,
+      employee_ids: []
+    }));
+
+    if (departmentId) {
+      const filtered = employees.filter(emp => emp.department_id === departmentId);
+      setFilteredEmployees(filtered);
+    } else {
+      setFilteredEmployees([]);
+    }
+  };
+
+  const handleEmployeeSelection = (event) => {
+    const { value } = event.target;
+    setExceptionShift(prev => ({
+      ...prev,
+      employee_ids: value
+    }));
+  };
+
+
+
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
 
@@ -206,6 +282,10 @@ const Planning = () => {
         </Typography>
 
         <Button variant="contained" color="primary" onClick={() => setOpenCreateDialog(true)} startIcon={<Add />}>Ajouter un shift</Button>
+
+        <Button sx={{ml: 5}} variant="contained" color="secondary" onClick={() => setOpenExceptionDialog(true)} startIcon={<Add />}>
+          Ajouter un planning exceptionnel
+        </Button>
         
         {/* Tableau des Shifts */}
         <Box sx={{ marginTop: 2 }}>
@@ -476,6 +556,106 @@ const Planning = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+       {/* Dialog pour le planning exceptionnel */}
+       <Dialog open={openExceptionDialog} onClose={() => setOpenExceptionDialog(false)}>
+          <DialogTitle>Créer un planning exceptionnel</DialogTitle>
+          <DialogContent>
+            <TextField
+              label="Nom du shift"
+              size='small'
+              fullWidth
+              margin="dense"
+              value={exceptionShift.shift_name}
+              onChange={(e) => setExceptionShift({ ...exceptionShift, shift_name: e.target.value })}
+              required
+            />
+            
+            <FormControl fullWidth margin="dense" size="small">
+              <InputLabel>Département</InputLabel>
+              <Select
+                value={exceptionShift.selectedDepartment}
+                onChange={handleDepartmentChangeForException}
+                label="Département"
+                required
+              >
+                {departments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.id}>{dept.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            {exceptionShift.selectedDepartment && (
+              <FormControl fullWidth margin="dense" size="small">
+                <InputLabel>Employés</InputLabel>
+                <Select
+                  multiple
+                  value={exceptionShift.employee_ids}
+                  onChange={handleEmployeeSelection}
+                  label="Employés"
+                  required
+                >
+                  {filteredEmployees.map((emp) => (
+                    <MenuItem key={emp.id} value={emp.id}>
+                      {emp.name} {emp.attendance_id}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+            
+            <TextField
+              label="Date"
+              type="date"
+              size='small'
+              fullWidth
+              margin="dense"
+              InputLabelProps={{ shrink: true }}
+              value={exceptionShift.date}
+              onChange={(e) => setExceptionShift({ ...exceptionShift, date: e.target.value })}
+              required
+            />
+            
+            <TextField
+              label="Heure de début"
+              type="time"
+              size='small'
+              fullWidth
+              margin="dense"
+              InputLabelProps={{ shrink: true }}
+              value={exceptionShift.start_time}
+              onChange={(e) => setExceptionShift({ ...exceptionShift, start_time: e.target.value })}
+              required
+            />
+            
+            <TextField
+              label="Heure de fin"
+              type="time"
+              size='small'
+              fullWidth
+              margin="dense"
+              InputLabelProps={{ shrink: true }}
+              value={exceptionShift.end_time}
+              onChange={(e) => setExceptionShift({ ...exceptionShift, end_time: e.target.value })}
+              required
+            />
+            
+            <TextField
+              label="Durée de pause (minutes)"
+              type="number"
+              size='small'
+              fullWidth
+              margin="dense"
+              value={exceptionShift.break_duration}
+              onChange={(e) => setExceptionShift({ ...exceptionShift, break_duration: e.target.value })}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenExceptionDialog(false)}>Annuler</Button>
+            <Button onClick={handleAddExceptionShift} color="primary">Créer</Button>
+          </DialogActions>
+        </Dialog>
+
     </Card>
   );
 };

@@ -169,7 +169,7 @@ const Navbar = () => {
                   onClose={handleNotificationsMenuClose}
                   PaperProps={{
                     style: {
-                      width: '300px',
+                      width: '500px',
                       maxHeight: '400px',
                       padding: '10px'
                     },

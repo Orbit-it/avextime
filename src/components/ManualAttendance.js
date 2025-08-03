@@ -23,6 +23,12 @@ const ManualAttendance = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
+  const updatedData = {
+    getin: timeIn,
+    getout: timeOut,
+    date: date
+  }
+
   useEffect(() => {
     api.fetchEmployees(setEmployees);
   }, []);
@@ -51,18 +57,19 @@ const ManualAttendance = () => {
     setAttendanceDetailsOpen(true);
   };
 
+  // Formatage des données pour l'API
+  const formatToPunchtime = (date, time) => {
+    const [hours, minutes] = time.split(':').map(n => n.padStart(2, '0'));
+    const [year, month, day] = date.split('-');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${hours}:${minutes}:00`;
+  };
+
   // Fonction pour modifier un pointage existant
   const handleEditAttendance = async (updatedData) => {
     try {
-      // Formatage des données pour l'API
-      const formatToPunchtime = (date, time) => {
-        const [hours, minutes] = time.split(':').map(n => n.padStart(2, '0'));
-        const [year, month, day] = date.split('-');
-        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${hours}:${minutes}:00`;
-      };
-
+    
       // Supprimer d'abord l'ancien pointage
-      await api.deletePointage(selectedAttendance.id);
+      //await api.deletePointage(selectedAttendance.id);
 
       // Enregistrer les nouveaux pointages
       const apiCalls = [];
@@ -90,11 +97,11 @@ const ManualAttendance = () => {
       // Rafraîchir les données
       api.fetchEmployees(setEmployees);
       
-      setSuccess('Pointage modifié avec succès');
+      setSuccess('Pointage ajouté avec succès');
       setAttendanceDetailsOpen(false);
     } catch (err) {
-      console.error('Erreur lors de la modification:', err);
-      setError('Erreur lors de la modification du pointage');
+      console.error("Erreur lors de l'ajout du pointage: ", err);
+      setError("Erreur lors de l'ajout du pointage");
     }
   };
 
@@ -114,9 +121,6 @@ const ManualAttendance = () => {
     }
   };
 
-  const markAttendance = async () => {
-    // ... (votre code existant pour markAttendance)
-  };
 
   return (
     <Card sx={{ boxShadow: 3, minHeight: '80vh' }}>
@@ -243,7 +247,7 @@ const ManualAttendance = () => {
                 <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
                   <Button onClick={handleCloseModal} color="secondary" sx={{ mr: 2 }}>Annuler</Button>
                   <Button 
-                    onClick={markAttendance} 
+                    onClick={() => handleEditAttendance(updatedData)} 
                     variant="contained" 
                     color="primary"
                     disabled={!date || (!timeIn && !timeOut)}

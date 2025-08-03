@@ -249,8 +249,6 @@ function Pointage() {
                         dailyAttendances.length > 0
                           ? dailyAttendances[0].is_anomalie
                             ? "anomalie" // Classe spéciale pour les anomalies
-                            : dailyAttendances[0].is_today
-                              ? "today" // Classe spéciale pour aujourd'hui
                               : dailyAttendances[0].status // Cas normal
                           : "cell-miss" // Cas par défaut si tableau vide
                       }>
@@ -312,7 +310,7 @@ function Pointage() {
                           </p>
                         )}
 
-                        {(dailyAttendances[0].status == 'absent' && !dailyAttendances[0].getin && !dailyAttendances[0].getout && !dailyAttendances[0].is_weekend && !dailyAttendances[0].is_today) && (
+                        {(dailyAttendances[0].status == 'absent' && !dailyAttendances[0].getin && !dailyAttendances[0].getout && !dailyAttendances[0].is_weekend) && (
                           <p>
                             <span >ABSENT</span> <br />
                           </p>

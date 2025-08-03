@@ -6,11 +6,14 @@ import {
   ListItemAvatar, Avatar, Card, CardContent,
   CircularProgress, Alert, Chip, Divider, Snackbar, ListItem, ListItemText,
 } from '@mui/material';
-import { Edit, Delete, Search, Person, Today, Close, Add, Exposure, SocialDistance, TaskAlt, Warning, Dangerous, Sick, LocalHospital, DoneAll } from '@mui/icons-material';
+import { Edit, Delete, Search, Person, Today, Close, Add, Exposure, SocialDistance, TaskAlt, Warning, Dangerous, Sick, LocalHospital, DoneAll, PersonAdd, 
+  ExitToApp, BeachAccess ,Stars , MedicalServices
+, MedicalInformation, Gavel, FileDownload }  from '@mui/icons-material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import fr from 'date-fns/locale/fr';
 import { format, differenceInDays, addDays, isBefore } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 import apiConfig from "../config/Endpoint";
 
@@ -30,6 +33,7 @@ interface Layoff {
   nb_jour: number;
   type: string;
   is_purged: boolean;
+  motif: string;
 }
 
 type LayoffType = 
@@ -41,7 +45,10 @@ type LayoffType =
   | 'cg_naissance' 
   | 'cg_mariage' 
   | 'cg_cir'
-  | 'rdv_medical';
+  | 'rdv_medical'
+  | 'blame'
+  | 'avertissement';
+
 
 interface ModalState {
   open: boolean;
@@ -75,6 +82,8 @@ const LAYOFF_TYPES: {value: LayoffType, label: string}[] = [
   { value: 'cg_naissance', label: 'Congé Naissance' },
   { value: 'cg_mariage', label: 'Congé Mariage' },
   { value: 'cg_cir', label: 'Congé Circoncision' },
+  { value: 'blame', label: 'Blame' },
+  { value: 'avertissement', label: 'Avertissement' },
 ];
 
 // Sous-composants
@@ -91,6 +100,8 @@ const LayoffListItem: React.FC<{
       case 'cg_maladie': return "warning";
       case 'accident': return "secondary";
       case 'map': return "error";
+      case 'blame': return "grey";
+      case 'avertissement': return "warning";
       default: return "info";
     }
   };
@@ -325,6 +336,14 @@ const EmployeeLayoffComponent: React.FC = () => {
     endDate: null,
     editingId: null
   });
+  const [editModalState, setEditModalState] = useState<ModalState>({
+    open: false,
+    employee: null,
+    type: 'map',
+    startDate: null,
+    endDate: null,
+    editingId: null
+  });
   const [tabIndex, setTabIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -388,15 +407,33 @@ const EmployeeLayoffComponent: React.FC = () => {
 
   // Gestion de la modal
   const handleOpenModal = useCallback((employee: Employee | null = null, layoff: Layoff | null = null) => {
-    setModalState({
-      open: true,
-      employee,
-      type: layoff ? (layoff.type as LayoffType) : 'map',
-      startDate: layoff ? new Date(layoff.start_date) : null,
-      endDate: layoff ? new Date(layoff.end_date) : null,
-      editingId: layoff ? layoff.id : null
-    });
-  }, []);
+
+    console.log(employee);
+    console.log(layoff);
+
+    if (layoff) {
+      // Mode édition
+      const employeeForLayoff = employees.find(emp => emp.id === layoff.employee_id);
+      setEditModalState({
+        open: true,
+        employee: employeeForLayoff || null,
+        type: layoff.type as LayoffType,
+        startDate: new Date(layoff.start_date),
+        endDate: new Date(layoff.end_date),
+        editingId: layoff.id
+      });
+    } else {
+      // Mode création
+      setModalState({
+        open: true,
+        employee,
+        type: 'map',
+        startDate: null,
+        endDate: null,
+        editingId: null
+      });
+    }
+  }, [employees]);
 
   const handleCloseModal = useCallback(() => {
     setModalState(prev => ({
@@ -405,9 +442,16 @@ const EmployeeLayoffComponent: React.FC = () => {
     }));
   }, []);
 
+  const handleCloseEditModal = useCallback(() => {
+    setEditModalState(prev => ({
+      ...prev,
+      open: false
+    }));
+  }, []);
+
   // Validation des dates
-  const validateDates = useCallback(() => {
-    const { startDate, endDate } = modalState;
+  const validateDates = useCallback((state: ModalState) => {
+    const { startDate, endDate } = state;
     
     if (!startDate || !endDate) {
       handleError("Veuillez sélectionner une date de début et de fin");
@@ -422,15 +466,19 @@ const EmployeeLayoffComponent: React.FC = () => {
       return false;
     }
     return true;
-  }, [modalState, handleError]);
+  }, [handleError]);
 
   // Soumission du formulaire
   const handleSubmit = useCallback(async () => {
-    if (!validateDates() || !modalState.employee) return;
-
-    const { employee, startDate, endDate, type, editingId } = modalState;
+    // Détermine si on est en mode édition ou création
+    const isEditMode = modalState.editingId !== null || editModalState.editingId !== null;
+    const currentState = isEditMode ? editModalState : modalState;
+    
+    if (!validateDates(currentState) || !currentState.employee) return;
+  
+    const { employee, startDate, endDate, type, editingId } = currentState;
     const nb_jour = differenceInDays(endDate!, startDate!) + 1;
-
+  
     const layoffData = {
       employee_id: employee.id,
       start_date: format(startDate!, 'yyyy-MM-dd'),
@@ -440,42 +488,47 @@ const EmployeeLayoffComponent: React.FC = () => {
       is_purged: false
     };
 
+    console.log(editingId);
+  
     try {
       setLoading(prev => ({ ...prev, submit: true }));
       
-      if (editingId) {
+      if (isEditMode) {
         await axios.put(`${API_URL}/layoffs/${editingId}`, layoffData, axiosConfig);
         handleSuccess("Mise à jour avec succès");
       } else {
         await axios.post(`${API_URL}/layoffs`, layoffData, axiosConfig);
         handleSuccess("Crée avec succès");
       }
-
+  
       // Rafraîchir les données
       const res = await axios.get<Layoff[]>(`${API_URL}/layoffs`, axiosConfig);
       setLayoffs(res.data || []);
       
-      // Fermer la modal après un délai
-      setTimeout(handleCloseModal, 1500);
+      // Fermer les modals après un délai
+      setTimeout(() => {
+        handleCloseModal();
+        handleCloseEditModal();
+      }, 1500);
     } catch (err) {
       handleError(
         err.response?.data?.message || 
-        (editingId ? "Erreur lors de la mise à jour" : "Erreur lors de la création"),
+        (isEditMode ? "Erreur lors de la mise à jour" : "Erreur lors de la création"),
         err
       );
     } finally {
       setLoading(prev => ({ ...prev, submit: false }));
     }
-  }, [modalState, validateDates, handleSuccess, handleError, handleCloseModal, axiosConfig]);
+  }, [modalState, editModalState, validateDates, handleSuccess, handleError, handleCloseModal, handleCloseEditModal, axiosConfig]);
 
   // Suppression d'un layoff
   const handleDelete = useCallback(async (id: number) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette mise à pied ?")) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette indisponibilité ?")) return;
 
     try {
       setLoading(prev => ({ ...prev, submit: true }));
       await axios.delete(`${API_URL}/layoffs/${id}`, axiosConfig);
-      handleSuccess("Mise à pied supprimée avec succès");
+      handleSuccess(" Supprimée avec succès");
       
       const res = await axios.get<Layoff[]>(`${API_URL}/layoffs`, axiosConfig);
       setLayoffs(res.data || []);
@@ -486,53 +539,136 @@ const EmployeeLayoffComponent: React.FC = () => {
     }
   }, [axiosConfig, handleSuccess, handleError]);
 
+  // Export Excel
+  const handleExportExcel = useCallback(() => {
+    // Obtenir les dates de référence
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    // Date de début: 26 du mois précédent
+    const startDateRef = new Date(currentYear, currentMonth - 1, 26);
+    
+    // Date de fin: 25 du mois courant
+    const endDateRef = new Date(currentYear, currentMonth, 25);
+  
+    // Filtrer les layoffs selon la période
+    const filteredLayoffs = layoffs.filter(layoff => {
+      const startDate = new Date(layoff.start_date);
+      const endDate = new Date(layoff.end_date);
+      
+      return startDate >= startDateRef && endDate <= endDateRef;
+    });
+  
+    if (filteredLayoffs.length === 0) {
+      setNotifications({
+        error: "Aucune donnée à exporter pour la période sélectionnée",
+        success: null
+      });
+      return;
+    }
+  
+    // Créer un nouveau workbook
+    const wb = XLSX.utils.book_new();
+  
+    // Grouper les données par type
+    const dataByType = {};
+    
+    filteredLayoffs.forEach(layoff => {
+      const employee = employees.find(emp => emp.id === layoff.employee_id);
+      const typeObj = LAYOFF_TYPES.find(t => t.value === layoff.type);
+      const typeLabel = typeObj?.label || layoff.type;
+      
+      if (!dataByType[typeLabel]) {
+        dataByType[typeLabel] = [];
+      }
+      
+      dataByType[typeLabel].push({
+        'Matricule de Paie': employee?.payroll_id || 'Inconnu',
+        'Employé': employee?.name || 'Inconnu',
+        'Type': typeLabel,
+        'Date début': format(new Date(layoff.start_date), 'dd/MM/yyyy'),
+        'Date fin': format(new Date(layoff.end_date), 'dd/MM/yyyy'),
+        'Durée (jours)': layoff.nb_jour,
+      });
+    });
+  
+    // Créer une feuille pour chaque type
+    Object.entries(dataByType).forEach(([type, data]) => {
+      // Limiter le nom de la feuille à 31 caractères (limitation Excel)
+      const sheetName = type.substring(0, 31);
+      const ws = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+  
+    // Nom du fichier avec la période
+    const fileName = `indisponibilites_${format(startDateRef, 'ddMM')}_au_${format(endDateRef, 'ddMMyyyy')}.xlsx`;
+    
+    // Exporter le fichier Excel
+    XLSX.writeFile(wb, fileName);
+  }, [layoffs, employees]);
+
   // Filtrage des données
   const filteredEmployees = useMemo(() => 
     employees.filter(emp =>
-      emp.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) || emp.attendance_id?.toString().includes(searchTerm.toLocaleLowerCase())
     ),
   [employees, searchTerm]);
+
+
 
   const filteredLayoffs = useMemo(() => 
     layoffs.filter(layoff => {
       const employee = employees.find(emp => emp.id === layoff.employee_id);
-      return employee?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      return employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ;
     }),
   [layoffs, employees, searchTerm]);
 
   // Gestion des changements de dates dans la modal
-  const handleDateChange = useCallback((field: 'startDate' | 'endDate', value: Date | null) => {
-    setModalState(prev => {
-      if (field === 'startDate' && value && prev.endDate && isBefore(prev.endDate, value)) {
-        return {
-          ...prev,
-          [field]: value,
-          endDate: addDays(value, 1)
-        };
-      }
+const handleDateChange = useCallback((field: 'startDate' | 'endDate', value: Date | null, isEditModal = false) => {
+  const setState = isEditModal ? setEditModalState : setModalState;
+  
+  setState(prev => {
+    if (field === 'startDate' && value && prev.endDate && isBefore(prev.endDate, value)) {
       return {
         ...prev,
-        [field]: value
+        [field]: value,
+        endDate: addDays(value, 1)
       };
-    });
-  }, []);
-
-  const handleTypeChange = useCallback((type: LayoffType) => {
-    setModalState(prev => ({
+    }
+    return {
       ...prev,
-      type
-    }));
-  }, []);
+      [field]: value
+    };
+  });
+}, []);
+
+const handleTypeChange = useCallback((type: LayoffType, isEditModal = false) => {
+  const setState = isEditModal ? setEditModalState : setModalState;
+  setState(prev => ({
+    ...prev,
+    type
+  }));
+}, []);
 
   return (
     <Card sx={{ boxShadow: 3, minHeight: '80vh' }}>
       <CardContent>
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
           {/* En-tête */}
-          <Box display="flex" alignItems="center" mb={2}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography sx={{color: '#27aae0'}} variant="h6" gutterBottom>
               GESTION DES INDISPONIBILITES
             </Typography>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<FileDownload />}
+              onClick={handleExportExcel}
+              disabled={loading.layoffs || layoffs.length === 0}
+            >
+              Exporter Excel
+            </Button>
           </Box>
 
           {/* Notifications */}
@@ -566,13 +702,15 @@ const EmployeeLayoffComponent: React.FC = () => {
             indicatorColor="primary"
             textColor="primary"
           >
-            <Tab icon={<Add/>} label="AJOUTER" />
-            <Tab icon={<Dangerous/>} label="MISE A PIED" />
-            <Tab icon={<TaskAlt/>} label="CONGES NORMAUX" />
-            <Tab icon={<DoneAll/>} label="CONGES EXCEPTIONNELS" />
-            <Tab icon={<Sick/>} label="CONGES MALADIES" />
-            <Tab icon={<Warning/>} label="ACCIDENTS DE TRAVAIL" />
-            <Tab icon={<LocalHospital/>} label="RDV MEDICAL" />
+            <Tab icon={<PersonAdd />} label="AJOUTER" />
+            <Tab icon={<ExitToApp />} label="MISE A PIED" /> 
+            <Tab icon={<BeachAccess />} label="CONGES NORMAUX" />
+            <Tab icon={<Stars />} label="CONGES EXCEPTIONNELS" /> 
+            <Tab icon={<Sick />} label="CONGES MALADIES" />
+            <Tab icon={<MedicalServices />} label="ACCIDENTS DE TRAVAIL" />
+            <Tab icon={<MedicalInformation />} label="RDV MEDICAL" />
+            <Tab icon={<Gavel />} label="BLAME" /> 
+            <Tab icon={<Warning />} label="AVERTISSEMENT" />
           </Tabs>
 
           {/* Contenu des onglets */}
@@ -622,7 +760,7 @@ const EmployeeLayoffComponent: React.FC = () => {
             </Box>
           )}
 
-          {(tabIndex >= 1 && tabIndex <= 6) && (
+          {(tabIndex >= 1 && tabIndex <= 8) && (
             /* Onglets avec listes de layoffs */
             <Box>
               <TextField
@@ -652,7 +790,9 @@ const EmployeeLayoffComponent: React.FC = () => {
                         'cg_dcs|cg_naissance|cg_mariage|cg_cir', // Tab 3
                         'cg_maladie', // Tab 4
                         'accident', // Tab 5
-                        'rdv_medical' // Tab 6
+                        'rdv_medical', // Tab 6
+                        'blame',
+                        'avertissement'
                       ];
                       const regex = new RegExp(tabFilters[tabIndex - 1]);
                       return regex.test(layoff.type);
@@ -681,13 +821,24 @@ const EmployeeLayoffComponent: React.FC = () => {
             </Box>
           )}
 
-          {/* Modal */}
+          {/* Modal d'ajout */}
           <LayoffModal
             state={modalState}
             onClose={handleCloseModal}
             onSubmit={handleSubmit}
-            onDateChange={handleDateChange}
-            onTypeChange={handleTypeChange}
+            onDateChange={(field, value) => handleDateChange(field, value, false)}
+            onTypeChange={(type) => handleTypeChange(type, false)}
+            loading={loading.submit}
+            notification={notifications.error}
+          />
+
+          {/* Modal d'edition */}
+          <LayoffModal
+            state={editModalState}
+            onClose={handleCloseEditModal}
+            onSubmit={handleSubmit}
+            onDateChange={(field, value) => handleDateChange(field, value, true)}
+            onTypeChange={(type) => handleTypeChange(type, true)}
             loading={loading.submit}
             notification={notifications.error}
           />
