@@ -804,7 +804,7 @@ const handleTypeChange = useCallback((type: LayoffType, isEditModal = false) => 
                           key={layoff.id}
                           layoff={layoff}
                           employee={employee}
-                          onEdit={handleOpenModal}
+                          onEdit={() => handleOpenModal(null, layoff)}
                           onDelete={handleDelete}
                           loading={loading.submit}
                         />
