@@ -11,6 +11,7 @@ import { FaArtstation, FaClock, FaUsers, FaTablet, FaBook } from "react-icons/fa
 import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 import api from "../api/api";
+import AttendanceDetailsModal from "./AttendanceDetailsModal";
 
 // Navigation items configuration
 const navItems = [
@@ -32,10 +33,10 @@ const Navbar = () => {
   const { user, logout } = useAuth();
 
   useEffect(() => {
-    // Simuler la récupération des notifications depuis l'API
+    // récupération des notifications depuis l'API
     const fetchNotifications = async () => {
       try {
-        // Remplacez ceci par votre appel API réel
+        
         const response = await api.fetchNotification();
         
         setNotifications(response.data);
@@ -244,12 +245,11 @@ const Navbar = () => {
                     )}
                     <Typography variant="h6">{user?.name || "Utilisateur"}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {user?.role || "Rôle non défini"}
+                      {user?.position || "Rôle non défini"}
                     </Typography>
                   </Box>
                   <Divider />
-                  <MenuItem onClick={handleProfileMenuClose}>Mon Profil</MenuItem>
-                  <MenuItem onClick={handleProfileMenuClose}>Paramètres</MenuItem>
+                  
                   <Divider />
                   <MenuItem 
                     onClick={handleLogout} 

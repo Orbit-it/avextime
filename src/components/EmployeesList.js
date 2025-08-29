@@ -118,8 +118,8 @@ const EmployeeList = () => {
   // Filtrage des employés
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearchTerm =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.attendance_id.toString().includes(searchTerm.toLowerCase());
+      employee?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee?.attendance_id.toString().includes(searchTerm.toLowerCase());
     
     const matchesDepartment =
       selectedDepartment === 'Tous' || employee.department_id === selectedDepartment;

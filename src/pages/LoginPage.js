@@ -23,12 +23,13 @@ const LoginPage = () => {
       });
 
       // Ne pas destructure le mot de passe de la réponse
-      const { name , role, token, avatar } = response.data;
+      const { name , role, token, avatar, position } = response.data;
 
       const userData = {
         name,
         role,
         avatar,
+        position,
         token // Ajout du token JWT si utilisé
       };
 

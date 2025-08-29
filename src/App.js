@@ -22,13 +22,16 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/refused" element={<NonAccessPage />} />
-            
-            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'employee', 'omega']} />}>
-              <Route path="/pointage" element={<Pointage />} />
+
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'omega', 'manager']} />}>
               <Route path="/" element={<Dashbord />} />
             </Route>
             
-            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'omega']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'omega']} />}>
+              <Route path="/pointage" element={<Pointage />} />
+            </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'omega']} />}>
               <Route path="/gestionrh" element={<GestionRh />} />
             </Route>
             

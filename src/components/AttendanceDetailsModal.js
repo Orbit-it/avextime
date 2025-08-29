@@ -180,6 +180,7 @@ const AttendanceDetailsModal = ({
           
           <Box sx={{ ml: 4 }}>
             <Typography variant="subtitle2">Heures TRAV: {attendance.hours_worked || "00:00"} </Typography>
+            <Typography variant="subtitle2">Heure de Debut Planning: {attendance.getin_ref || "00:00"} </Typography>
             {attendance.is_anomalie && (
               <Typography color="error" sx={{ mt: 1 }}>⚠️ Anomalie détectée</Typography>
             )}

@@ -5,19 +5,17 @@ import {
   Box, Typography, IconButton, Tabs, Tab, 
   ListItemAvatar, Avatar, Card, CardContent,
   CircularProgress, Alert, Chip, Divider, Snackbar, ListItem, ListItemText,
-  Select, MenuItem, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel
+  Select, MenuItem, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from '@mui/material';
 import { 
-  Edit, Delete, Search, Person, Today, Close, Add, Exposure, SocialDistance, 
-  TaskAlt, Warning, Dangerous, Sick, LocalHospital, DoneAll, PersonAdd, 
-  ExitToApp, BeachAccess, Stars, MedicalServices, MedicalInformation, Gavel, LaptopMac,
-  FileDownload, 
-  AssignmentTurnedIn
+  Edit, Delete, Search, Person, Today, Close, Add, Construction, 
+  TaskAlt, Warning, AttachMoney, FileDownload , PersonAdd, PanToolAlt, PanToolTwoTone
 } from '@mui/icons-material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import fr from 'date-fns/locale/fr';
-import { format, differenceInDays, addDays, isBefore, differenceInBusinessDays } from 'date-fns';
+import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
 
 import apiConfig from "../config/Endpoint";
@@ -32,15 +30,14 @@ interface Employee {
   department_id?: number;
 }
 
-interface Layoff {
+interface ToolLoss {
   id: number;
   employee_id: number;
-  start_date: string;
-  end_date: string;
-  nb_jour: number;
-  type: string;
-  is_purged: boolean;
-  motif: string;
+  tool: string;
+  price: number;
+  date: string;
+  is_payed: boolean;
+  notes: string;
 }
 
 interface Department {
@@ -54,30 +51,15 @@ interface SelectionMode {
   selectedEmployees: number[];
 }
 
-type LayoffType = 
-  | 'map' 
-  | 'conge' 
-  | 'cg_maladie' 
-  | 'accident' 
-  | 'cg_dcs' 
-  | 'cg_naissance' 
-  | 'cg_mariage' 
-  | 'cg_cir'
-  | 'rdv_medical'
-  | 'blame'
-  | 'avertissement'
-  | 'mission'
-  | 'remote';
-
 interface ModalState {
   open: boolean;
   employee: Employee | null;
   employees: Employee[];
-  type: LayoffType;
-  startDate: Date | null;
-  endDate: Date | null;
+  toolName: string;
+  toolPrice: number;
+  lossDate: Date | null;
+  notes: string;
   editingId: number | null;
-  motif: string;
   isMultiple: boolean;
 }
 
@@ -88,7 +70,7 @@ interface Notification {
 
 interface LoadingState {
   employees: boolean;
-  layoffs: boolean;
+  toolLosses: boolean;
   submit: boolean;
 }
 
@@ -97,116 +79,111 @@ interface DeleteModalState {
   idToDelete: number | null;
 }
 
-// Constantes
+// Configuration API
 const API_URL = apiConfig.baseUri;
-const LAYOFF_TYPES: {value: LayoffType, label: string, icon: React.ReactNode}[] = [
-  { value: 'map', label: 'Mise à Pied', icon: <ExitToApp /> },
-  { value: 'accident', label: 'Accident de Travail', icon: <MedicalServices /> },
-  { value: 'rdv_medical', label: 'RDV Médical justifié', icon: <MedicalInformation /> },
-  { value: 'conge', label: 'Congé Simple', icon: <BeachAccess /> },
-  { value: 'cg_maladie', label: 'Congé Maladie', icon: <Sick /> },
-  { value: 'cg_dcs', label: 'Congé Décès Parental', icon: <Warning /> },
-  { value: 'cg_naissance', label: 'Congé Naissance', icon: <Add /> },
-  { value: 'cg_mariage', label: 'Congé Mariage', icon: <DoneAll /> },
-  { value: 'cg_cir', label: 'Congé Circoncision', icon: <MedicalInformation /> },
-  { value: 'blame', label: 'Blame', icon: <Gavel /> },
-  { value: 'avertissement', label: 'Avertissement', icon: <Warning /> },
-  { value: 'mission', label: 'Mission', icon: <AssignmentTurnedIn /> },
-  { value: 'remote', label: 'Télétravail', icon: <LaptopMac /> },
-];
 
 // Sous-composants
-const LayoffListItem: React.FC<{
-  layoff: Layoff;
+const ToolLossListItem: React.FC<{
+  toolLoss: ToolLoss;
   employee: Employee | undefined;
-  onEdit: (layoff: Layoff) => void;
+  onEdit: (toolLoss: ToolLoss) => void;
   onDelete: (id: number) => void;
   loading: boolean;
-}> = ({ layoff, employee, onEdit, onDelete, loading }) => {
-  const getChipColor = (type: string) => {
-    switch(type) {
-      case 'conge': return "success";
-      case 'cg_maladie': return "warning";
-      case 'accident': return "secondary";
-      case 'map': return "error";
-      case 'blame': return "info";
-      case 'avertissement': return "warning";
-      default: return "primary";
-    }
-  };
-
-  const getTypeLabel = (type: string) => {
-    const typeObj = LAYOFF_TYPES.find(t => t.value === type);
-    return typeObj ? `${layoff.nb_jour} jour(s) ${typeObj.label}` : `${layoff.nb_jour} jour(s)`;
-  };
-
-
-
+}> = ({ toolLoss, employee, onEdit, onDelete, loading }) => {
   return (
     <React.Fragment>
-      <ListItem
-        sx={{
-          backgroundColor: 'background.paper',
-          borderRadius: 1,
-          mb: 1,
-          boxShadow: 1
-        }}
-        secondaryAction={
-          <Box>
-            <IconButton
-              onClick={() => onEdit(layoff)}
-              color="primary"
-              disabled={loading}
-            >
-              <Edit />
-            </IconButton>
-            <IconButton
-              onClick={() => onDelete(layoff.id)}
-              color="error"
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : <Delete />}
-            </IconButton>
-          </Box>
-        }
-      >
-        <Box width="100%" display="flex" >
-          <Box display="flex" alignItems="center">
-            <ListItemAvatar>
-              <Avatar sx={{ bgcolor: 'primary.main' }} src={employee?.avatar}>
-                {employee?.name?.charAt(0)}
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={employee?.name || 'Inconnu'}
-              secondary={`Matricule: ${employee?.attendance_id || 'Inconnu'}`}
-            />
-            <Chip
-              label={getTypeLabel(layoff.type)}
-              color={getChipColor(layoff.type)}
-              size="small"
-              sx={{ ml: 1 }}
-            />
-            {layoff.is_purged && (
-              <Chip
-                label="Archivée"
-                sx={{ ml: 1, backgroundColor: '#f0f0f0', color: '#757575' }}
-                size="small"
-              />
-            )}
-          </Box>
-          <Box display="flex" mr={2} alignItems="center">
-            <Today color="primary" fontSize="small" sx={{ mr: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              Du {format(new Date(layoff.start_date), 'dd/MM/yyyy')} au {format(new Date(layoff.end_date), 'dd/MM/yyyy')}
-            </Typography>
-          </Box>
+        <ListItem
+    sx={{
+      backgroundColor: 'background.paper',
+      borderRadius: 1,
+      mb: 1,
+      boxShadow: 1,
+      justifyContent: "space-between",
+      alignItems: "center",
+      py: 1.5,
+      px: 2
+    }}
+    secondaryAction={
+      <Box sx={{ ml: 2 }}>
+        <IconButton
+          onClick={() => onEdit(toolLoss)}
+          color="primary"
+          disabled={loading}
+          size="small"
+        >
+          <Edit />
+        </IconButton>
+        <IconButton
+          onClick={() => onDelete(toolLoss.id)}
+          color="error"
+          disabled={loading}
+          size="small"
+        >
+          {loading ? <CircularProgress size={20} /> : <Delete />}
+        </IconButton>
+      </Box>
+    }
+  >
+    <Box width="100%" display="flex" alignItems="center" gap={2}>
+      {/* Section Avatar et Info Employé */}
+      <Box display="flex" alignItems="center" flexShrink={0}>
+        <ListItemAvatar sx={{ minWidth: 48 }}>
+          <Avatar 
+            sx={{ 
+              bgcolor: 'primary.main', 
+              width: 40, 
+              height: 40,
+              mr: 1
+            }} 
+            src={employee?.avatar}
+          >
+            {employee?.name?.charAt(0)}
+          </Avatar>
+        </ListItemAvatar>
+        <Box>
+          <Typography variant="subtitle2" fontWeight="medium">
+            {employee?.name || 'Inconnu'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Matricule: {employee?.attendance_id || 'Inconnu'}
+          </Typography>
         </Box>
-      </ListItem>
-      {layoff.motif && (
+      </Box>
+
+      {/* Section Outil et Prix */}
+      <Box display="flex" flexDirection="column" alignItems="center" minWidth="120px">
+        <Typography variant="body1" fontWeight="bold" noWrap>
+          {toolLoss.tool}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {toolLoss.price} TND
+        </Typography>
+      </Box>
+
+      {/* Statut Paiement */}
+      <Box>
+        <Chip
+          label={toolLoss.is_payed ? "Payé" : "Non payé"}
+          color={toolLoss.is_payed ? "success" : "error"}
+          size="small"
+          variant="outlined"
+        />
+      </Box>
+
+      {/* Date */}
+      <Box display="flex" alignItems="center" flexShrink={0}>
+        <Today color="primary" fontSize="small" sx={{ mr: 0.5 }} />
+        <Typography variant="caption" color="text.secondary">
+          {format(new Date(toolLoss.date), 'dd/MM/yyyy')}
+        </Typography>
+      </Box>
+    </Box>
+        </ListItem>
+      
+      {toolLoss.notes && (
         <Box sx={{ pl: 9, pr: 2, mb: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            <strong>Motif:</strong> {layoff.motif}
+            <strong>Notes:</strong> {toolLoss.notes}
           </Typography>
         </Box>
       )}
@@ -215,7 +192,6 @@ const LayoffListItem: React.FC<{
   );
 };
 
-// Créez un nouveau composant pour la modal de confirmation
 const DeleteConfirmationModal: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -239,7 +215,7 @@ const DeleteConfirmationModal: React.FC<{
         Confirmer la suppression
       </Typography>
       <Typography variant="body1" sx={{ mb: 3 }}>
-        Êtes-vous sûr de vouloir supprimer cette indisponibilité ?
+        Êtes-vous sûr de vouloir supprimer cette perte d'outillage ?
       </Typography>
       <Box display="flex" justifyContent="flex-end" gap={2}>
         <Button variant="outlined" onClick={onClose} disabled={loading}>
@@ -259,23 +235,20 @@ const DeleteConfirmationModal: React.FC<{
   </Modal>
 );
 
-const LayoffModal: React.FC<{
+const ToolLossModal: React.FC<{
   state: ModalState;
   onClose: () => void;
   onSubmit: () => void;
-  onDateChange: (field: 'startDate' | 'endDate', value: Date | null) => void;
-  onTypeChange: (type: LayoffType) => void;
-  onMotifChange: (motif: string) => void;
+  onToolNameChange: (name: string) => void;
+  onToolPriceChange: (price: number) => void;
+  onDateChange: (date: Date | null) => void;
+  onNotesChange: (notes: string) => void;
   loading: boolean;
   notification: string | null;
-}> = ({ state, onClose, onSubmit, onDateChange, onTypeChange, onMotifChange, loading, notification }) => {
-  const duration = useMemo(() => {
-    if (state.startDate && state.endDate) {
-      return differenceInBusinessDays(state.endDate, state.startDate) + 1;
-    }
-    return 0;
-  }, [state.startDate, state.endDate]);
-
+}> = ({ 
+  state, onClose, onSubmit, onToolNameChange, onToolPriceChange, 
+  onDateChange, onNotesChange, loading, notification 
+}) => {
   return (
     <Modal open={state.open} onClose={onClose}>
       <Box sx={{
@@ -293,7 +266,7 @@ const LayoffModal: React.FC<{
       }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h6" fontWeight="bold">
-            {state.editingId ? "Modifier indisponibilité" : "Ajouter indisponibilité"}
+            {state.editingId ? "Modifier perte d'outillage" : "Enregistrer une perte d'outillage"}
           </Typography>
           <IconButton onClick={onClose} disabled={loading}>
             <Close />
@@ -333,77 +306,54 @@ const LayoffModal: React.FC<{
         ) : null}
 
         <Box mb={3}>
-          <Select
-            value={state.type}
-            onChange={(e) => onTypeChange(e.target.value as LayoffType)}
+          <TextField
+            label="Nom de l'outil"
             fullWidth
-            size="small"
+            value={state.toolName}
+            onChange={(e) => onToolNameChange(e.target.value)}
             sx={{ mb: 2 }}
-          >
-            {LAYOFF_TYPES.map((type) => (
-              <MenuItem key={type.value} value={type.value}>
-                <Box display="flex" alignItems="center">
-                  <Box mr={1}>{type.icon}</Box>
-                  {type.label}
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
+            error={!!notification}
+          />
+
+          <TextField
+            label="Prix de l'outil (TND)"
+            type="number"
+            fullWidth
+            value={state.toolPrice || ''}
+            onChange={(e) => onToolPriceChange(Number(e.target.value))}
+            InputProps={{
+              inputProps: { min: 0, step: 0.01 }
+            }}
+            sx={{ mb: 2 }}
+            error={!!notification}
+          />
 
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-            <Box display="flex" gap={2} sx={{ mb: 2 }}>
-              <DatePicker
-                label="Date de début"
-                value={state.startDate}
-                onChange={(newDate) => onDateChange('startDate', newDate)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    fullWidth
-                    error={!!notification}
-                  />
-                )}
-              />
-
-              <DatePicker
-                label="Date de fin"
-                value={state.endDate}
-                minDate={state.startDate || undefined}
-                onChange={(newDate) => onDateChange('endDate', newDate)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    fullWidth
-                    error={!!notification}
-                  />
-                )}
-              />
-            </Box>
+            <DatePicker
+              label="Date de perte"
+              value={state.lossDate}
+              onChange={onDateChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={!!notification}
+                />
+              )}
+            />
           </LocalizationProvider>
 
           <TextField
-            label="Motif"
+            label="Notes"
             multiline
             rows={3}
             fullWidth
-            value={state.motif}
-            onChange={(e) => onMotifChange(e.target.value)}
+            value={state.notes}
+            onChange={(e) => onNotesChange(e.target.value)}
             error={!!notification}
           />
         </Box>
-
-        {duration > 0 && (
-          <Box mb={3}>
-            <Chip
-              label={`Durée: ${duration} jour(s)`}
-              color="primary"
-              variant="outlined"
-              size="medium"
-            />
-          </Box>
-        )}
 
         {notification && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -422,7 +372,7 @@ const LayoffModal: React.FC<{
           <Button
             variant="contained"
             onClick={onSubmit}
-            disabled={loading || !state.startDate || !state.endDate}
+            disabled={loading || !state.toolName || !state.toolPrice || !state.lossDate}
             startIcon={loading ? <CircularProgress size={20} /> : null}
           >
             {state.editingId ? "Mettre à jour" : "Confirmer"}
@@ -434,7 +384,7 @@ const LayoffModal: React.FC<{
 };
 
 // Composant principal
-const EmployeeLayoffComponent: React.FC = () => {
+const ToolLossComponent: React.FC = () => {
   // États
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -443,10 +393,10 @@ const EmployeeLayoffComponent: React.FC = () => {
     selectedDepartment: null,
     selectedEmployees: []
   });
-  const [layoffs, setLayoffs] = useState<Layoff[]>([]);
+  const [toolLosses, setToolLosses] = useState<ToolLoss[]>([]);
   const [loading, setLoading] = useState<LoadingState>({
     employees: true,
-    layoffs: true,
+    toolLosses: true,
     submit: false
   });
   const [notifications, setNotifications] = useState<Notification>({
@@ -457,33 +407,30 @@ const EmployeeLayoffComponent: React.FC = () => {
     open: false,
     employee: null,
     employees: [],
-    type: 'map',
-    startDate: null,
-    endDate: null,
+    toolName: '',
+    toolPrice: 0,
+    lossDate: null,
+    notes: '',
     editingId: null,
-    motif: '',
     isMultiple: false
   });
   const [editModalState, setEditModalState] = useState<ModalState>({
     open: false,
     employee: null,
     employees: [],
-    type: 'map',
-    startDate: null,
-    endDate: null,
+    toolName: '',
+    toolPrice: 0,
+    lossDate: null,
+    notes: '',
     editingId: null,
-    motif: '',
     isMultiple: false
   });
   const [tabIndex, setTabIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-
   const [deleteModalState, setDeleteModalState] = useState<DeleteModalState>({
     open: false,
     idToDelete: null
-  })
-
- 
+  });
 
   // Configuration axios
   const axiosConfig = useMemo(() => ({
@@ -497,16 +444,16 @@ const EmployeeLayoffComponent: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(prev => ({ ...prev, employees: true, layoffs: true }));
+        setLoading(prev => ({ ...prev, employees: true, toolLosses: true }));
         
-        const [employeesRes, layoffsRes, departmentsRes] = await Promise.all([
-          axios.get<Employee[]>(`${API_URL}/active-employees`, axiosConfig),
-          axios.get<Layoff[]>(`${API_URL}/layoffs`, axiosConfig),
+        const [employeesRes, toolLossesRes, departmentsRes] = await Promise.all([
+          axios.get<Employee[]>(`${API_URL}/employees`, axiosConfig),
+          axios.get<ToolLoss[]>(`${API_URL}/tool-losses`, axiosConfig),
           axios.get<Department[]>(`${API_URL}/departments`, axiosConfig)
         ]);
         
         setEmployees(employeesRes.data || []);
-        setLayoffs(layoffsRes.data || []);
+        setToolLosses(toolLossesRes.data || []);
         setDepartments(departmentsRes.data || []);
         
         // Initialiser le département sélectionné s'il y a des départements
@@ -522,7 +469,7 @@ const EmployeeLayoffComponent: React.FC = () => {
         setLoading(prev => ({
           ...prev,
           employees: false,
-          layoffs: false
+          toolLosses: false
         }));
       }
     };
@@ -608,39 +555,20 @@ const EmployeeLayoffComponent: React.FC = () => {
     }));
   };
 
-  // Validation des dates
-  const validateDates = useCallback((state: ModalState) => {
-    const { startDate, endDate } = state;
-    
-    if (!startDate || !endDate) {
-      handleError("Veuillez sélectionner une date de début et de fin");
-      return false;
-    }
-    if (isBefore(endDate, startDate)) {
-      handleError("La date de fin doit être après la date de début");
-      return false;
-    }
-    if (differenceInBusinessDays(endDate, startDate) > 365) {
-      handleError("La durée ne peut pas dépasser 1 an");
-      return false;
-    }
-    return true;
-  }, [handleError]);
-
   // Gestion de la modal
-  const handleOpenModal = useCallback((employees: Employee[] | Employee | null = null, layoff: Layoff | null = null) => {
-    if (layoff) {
+  const handleOpenModal = useCallback((employees: Employee , toolLoss: ToolLoss | null = null) => {
+    if (toolLoss) {
       // Mode édition (toujours pour un seul employé)
-      const employeeForLayoff = employees?.find(emp => emp.id === layoff.employee_id);
+      const employeeForToolLoss = employees?.find(emp => emp.id === toolLoss.employee_id);
       setEditModalState({
         open: true,
-        employee: employeeForLayoff || null,
+        employee: employeeForToolLoss || null,
         employees: [],
-        type: layoff.type as LayoffType,
-        startDate: new Date(layoff.start_date),
-        endDate: new Date(layoff.end_date),
-        editingId: layoff.id,
-        motif: layoff.motif || '',
+        toolName: toolLoss.tool,
+        toolPrice: toolLoss.price,
+        lossDate: new Date(toolLoss.date),
+        notes: toolLoss.notes || '',
+        editingId: toolLoss.id,
         isMultiple: false
       });
     } else if (Array.isArray(employees)) {
@@ -649,11 +577,11 @@ const EmployeeLayoffComponent: React.FC = () => {
         open: true,
         employee: null,
         employees: employees,
-        type: 'map',
-        startDate: null,
-        endDate: null,
+        toolName: '',
+        toolPrice: 0,
+        lossDate: null,
+        notes: '',
         editingId: null,
-        motif: '',
         isMultiple: true
       });
     } else {
@@ -662,11 +590,11 @@ const EmployeeLayoffComponent: React.FC = () => {
         open: true,
         employee: employees,
         employees: [],
-        type: 'map',
-        startDate: null,
-        endDate: null,
+        toolName: '',
+        toolPrice: 0,
+        lossDate: null,
+        notes: '',
         editingId: null,
-        motif: '',
         isMultiple: false
       });
     }
@@ -691,77 +619,71 @@ const EmployeeLayoffComponent: React.FC = () => {
     const isEditMode = modalState.editingId !== null || editModalState.editingId !== null;
     const currentState = isEditMode ? editModalState : modalState;
     
-    if (!validateDates(currentState)) return;
+    if (!currentState.toolName || !currentState.toolPrice || !currentState.lossDate) {
+      handleError("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
   
     try {
       setLoading(prev => ({ ...prev, submit: true }));
       
       if (isEditMode && currentState.editingId) {
         // Mode édition
-        const { employee, startDate, endDate, type, editingId, motif } = currentState;
-        if (!employee || !startDate || !endDate) return;
-        
-        const nb_jour = differenceInBusinessDays(endDate, startDate) + 1;
+        const { employee, toolName, toolPrice, lossDate, notes, editingId } = currentState;
+        if (!employee || !lossDate) return; 
       
-        const layoffData = {
+        const toolLossData = {
           employee_id: employee.id,
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd'),
-          nb_jour,
-          type,
-          is_purged: false,
-          motif
+          tool: toolName,
+          price: toolPrice,
+          date: format(lossDate, 'yyyy-MM-dd'),
+          notes: notes || '',
+          is_payed: false
         };
 
-        await axios.put(`${API_URL}/layoffs/${editingId}`, layoffData, axiosConfig);
+        await axios.put(`${API_URL}/tool-losses/${editingId}`, toolLossData, axiosConfig);
         handleSuccess("Mise à jour effectuée avec succès");
       } else if (currentState.isMultiple) {
         // Mode création multiple
-        const { employees, startDate, endDate, type, motif } = currentState;
-        if (!startDate || !endDate || employees.length === 0) return;
-        
-        const nb_jour = differenceInBusinessDays(endDate, startDate) + 1;
+        const { employees, toolName, toolPrice, lossDate, notes } = currentState;
+        if (!lossDate || employees.length === 0) return;
         
         const promises = employees.map(employee => {
-          const layoffData = {
+          const toolLossData = {
             employee_id: employee.id,
-            start_date: format(startDate, 'yyyy-MM-dd'),
-            end_date: format(endDate, 'yyyy-MM-dd'),
-            nb_jour,
-            type,
-            is_purged: false,
-            motif
+            tool: toolName,
+            price: toolPrice,
+            date: format(lossDate, 'yyyy-MM-dd'),
+            notes: notes || '',
+            is_payed: false
           };
           
-          return axios.post(`${API_URL}/layoffs`, layoffData, axiosConfig);
+          return axios.post(`${API_URL}/tool-losses`, toolLossData, axiosConfig);
         });
         
         await Promise.all(promises);
-        handleSuccess(`${employees.length} indisponibilité(s) créée(s) avec succès`);
+        handleSuccess(`${employees.length} perte(s) d'outillage créée(s) avec succès`);
       } else {
         // Mode création simple
-        const { employee, startDate, endDate, type, motif } = currentState;
-        if (!employee || !startDate || !endDate) return;
-        
-        const nb_jour = differenceInBusinessDays(endDate, startDate) + 1;
+        const { employee, toolName, toolPrice, lossDate, notes } = currentState;
+        if (!employee || !lossDate) return;
       
-        const layoffData = {
+        const toolLossData = {
           employee_id: employee.id,
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd'),
-          nb_jour,
-          type,
-          is_purged: false,
-          motif
+          tool: toolName,
+          price: toolPrice,
+          date: format(lossDate, 'yyyy-MM-dd'),
+          notes: notes || '',
+          is_payed: false
         };
 
-        await axios.post(`${API_URL}/layoffs`, layoffData, axiosConfig);
-        handleSuccess("Indisponibilité créée avec succès");
+        await axios.post(`${API_URL}/tool-losses`, toolLossData, axiosConfig);
+        handleSuccess("Perte d'outillage enregistrée avec succès");
       }
   
       // Rafraîchir les données
-      const res = await axios.get<Layoff[]>(`${API_URL}/layoffs`, axiosConfig);
-      setLayoffs(res.data || []);
+      const res = await axios.get<ToolLoss[]>(`${API_URL}/tool-losses`, axiosConfig);
+      setToolLosses(res.data || []);
       
       // Fermer les modals
       if (isEditMode) {
@@ -778,83 +700,55 @@ const EmployeeLayoffComponent: React.FC = () => {
     } finally {
       setLoading(prev => ({ ...prev, submit: false }));
     }
-  }, [modalState, editModalState, validateDates, handleSuccess, handleError, handleCloseModal, handleCloseEditModal, axiosConfig]);
+  }, [modalState, editModalState, handleSuccess, handleError, handleCloseModal, handleCloseEditModal, axiosConfig]);
 
-
-  // // Suppression d'un layoff
-const handleDelete = useCallback(async (id: number) => {
-  try {
-    setLoading(prev => ({ ...prev, submit: true }));
-    await axios.delete(`${API_URL}/layoffs/${id}`, axiosConfig);
-    handleSuccess("Indisponibilité supprimée avec succès");
-    
-    const res = await axios.get<Layoff[]>(`${API_URL}/layoffs`, axiosConfig);
-    setLayoffs(res.data || []);
-  } catch (err) {
-    handleError("Erreur lors de la suppression", err);
-  } finally {
-    setLoading(prev => ({ ...prev, submit: false }));
-    setDeleteModalState({ open: false, idToDelete: null });
-  }
-}, [axiosConfig, handleSuccess, handleError]);
-
-
+  // Suppression d'une perte d'outillage
+  const handleDelete = useCallback(async (id: number) => {
+    try {
+      setLoading(prev => ({ ...prev, submit: true }));
+      await axios.delete(`${API_URL}/tool-losses/${id}`, axiosConfig);
+      handleSuccess("Perte d'outillage supprimée avec succès");
+      
+      const res = await axios.get<ToolLoss[]>(`${API_URL}/tool-losses`, axiosConfig);
+      setToolLosses(res.data || []);
+    } catch (err) {
+      handleError("Erreur lors de la suppression", err);
+    } finally {
+      setLoading(prev => ({ ...prev, submit: false }));
+      setDeleteModalState({ open: false, idToDelete: null });
+    }
+  }, [axiosConfig, handleSuccess, handleError]);
 
   // Export Excel
   const handleExportExcel = useCallback(() => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
-    const startDateRef = new Date(currentYear, currentMonth - 1, 26);
-    const endDateRef = new Date(currentYear, currentMonth, 25);
-  
-    const filteredLayoffs = layoffs.filter(layoff => {
-      const startDate = new Date(layoff.start_date);
-      const endDate = new Date(layoff.end_date);
-      return startDate >= startDateRef && endDate <= endDateRef;
-    });
-  
-    if (filteredLayoffs.length === 0) {
+    if (toolLosses.length === 0) {
       setNotifications({
-        error: "Aucune donnée à exporter pour la période sélectionnée",
+        error: "Aucune donnée à exporter",
         success: null
       });
       return;
     }
   
     const wb = XLSX.utils.book_new();
-    const dataByType: Record<string, any[]> = {};
-    
-    filteredLayoffs.forEach(layoff => {
-      const employee = employees.find(emp => emp.id === layoff.employee_id);
-      const typeObj = LAYOFF_TYPES.find(t => t.value === layoff.type);
-      const typeLabel = typeObj?.label || layoff.type;
-      
-      if (!dataByType[typeLabel]) {
-        dataByType[typeLabel] = [];
-      }
-      
-      dataByType[typeLabel].push({
+    const data = toolLosses.map(loss => {
+      const employee = employees.find(emp => emp.id === loss.employee_id);
+      return {
         'Matricule': employee?.attendance_id || 'Inconnu',
         'Employé': employee?.name || 'Inconnu',
-        'Type': typeLabel,
-        'Date début': format(new Date(layoff.start_date), 'dd/MM/yyyy'),
-        'Date fin': format(new Date(layoff.end_date), 'dd/MM/yyyy'),
-        'Durée (jours)': layoff.nb_jour,
-        'Motif': layoff.motif || 'Non spécifié'
-      });
+        'Outil': loss.tool,
+        'Prix (TND)': loss.price,
+        'Date perte': format(new Date(loss.date), 'dd/MM/yyyy'),
+        'Statut': loss.is_payed ? 'Payé' : 'Non payé',
+        'Notes': loss.notes || 'Non spécifié'
+      };
     });
   
-    Object.entries(dataByType).forEach(([type, data]) => {
-      const sheetName = type.substring(0, 31);
-      const ws = XLSX.utils.json_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "Pertes d'outillage");
   
-    const fileName = `indisponibilites_${format(startDateRef, 'ddMM')}_au_${format(endDateRef, 'ddMMyyyy')}.xlsx`;
+    const fileName = `pertes_outillage_${format(new Date(), 'ddMMyyyy')}.xlsx`;
     XLSX.writeFile(wb, fileName);
-  }, [layoffs, employees]);
+  }, [toolLosses, employees]);
 
   // Filtrage des données
   const filteredEmployees = useMemo(() => 
@@ -864,56 +758,71 @@ const handleDelete = useCallback(async (id: number) => {
     ),
   [employees, searchTerm]);
 
-  const filteredLayoffs = useMemo(() => 
-    layoffs.filter(layoff => {
-      const employee = employees.find(emp => emp.id === layoff.employee_id);
+  const filteredToolLosses = useMemo(() => 
+    toolLosses.filter(loss => {
+      const employee = employees.find(emp => emp.id === loss.employee_id);
       return (
         employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee?.attendance_id?.toString().includes(searchTerm.toLowerCase())
+        employee?.attendance_id?.toString().includes(searchTerm.toLowerCase()) ||
+        loss.tool?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }),
-  [layoffs, employees, searchTerm]);
+  [toolLosses, employees, searchTerm]);
 
   // Gestion des changements dans la modal
-  const handleDateChange = useCallback((field: 'startDate' | 'endDate', value: Date | null, isEditModal = false) => {
-    const setState = isEditModal ? setEditModalState : setModalState;
-    
-    setState(prev => {
-      if (field === 'startDate' && value && prev.endDate && isBefore(prev.endDate, value)) {
-        return {
-          ...prev,
-          [field]: value,
-          endDate: addDays(value, 1)
-        };
-      }
-      return {
-        ...prev,
-        [field]: value
-      };
-    });
-  }, []);
-
-     // Fonction pour ouvrir la modal de confirmation
-
-const handleOpenDeleteModal = useCallback((id: number) => {
-  setDeleteModalState({ open: true, idToDelete: id });
-}, []);
-
-  const handleTypeChange = useCallback((type: LayoffType, isEditModal = false) => {
+  const handleToolNameChange = useCallback((name: string, isEditModal = false) => {
     const setState = isEditModal ? setEditModalState : setModalState;
     setState(prev => ({
       ...prev,
-      type
+      toolName: name
     }));
   }, []);
 
-  const handleMotifChange = useCallback((motif: string, isEditModal = false) => {
+  const handleToolPriceChange = useCallback((price: number, isEditModal = false) => {
     const setState = isEditModal ? setEditModalState : setModalState;
     setState(prev => ({
       ...prev,
-      motif
+      toolPrice: price
     }));
   }, []);
+
+  const handleDateChange = useCallback((date: Date | null, isEditModal = false) => {
+    const setState = isEditModal ? setEditModalState : setModalState;
+    setState(prev => ({
+      ...prev,
+      lossDate: date
+    }));
+  }, []);
+
+  const handleNotesChange = useCallback((notes: string, isEditModal = false) => {
+    const setState = isEditModal ? setEditModalState : setModalState;
+    setState(prev => ({
+      ...prev,
+      notes
+    }));
+  }, []);
+
+  // Fonction pour ouvrir la modal de confirmation
+  const handleOpenDeleteModal = useCallback((id: number) => {
+    setDeleteModalState({ open: true, idToDelete: id });
+  }, []);
+
+  // Calcul des totaux
+  const totalLosses = useMemo(() => {
+    return filteredToolLosses.reduce((sum, loss) => sum + loss.price, 0);
+  }, [filteredToolLosses]);
+
+  const totalPaid = useMemo(() => {
+    return filteredToolLosses
+      .filter(loss => loss.is_payed)
+      .reduce((sum, loss) => sum + loss.price, 0);
+  }, [filteredToolLosses]);
+
+  const totalUnpaid = useMemo(() => {
+    return filteredToolLosses
+      .filter(loss => !loss.is_payed)
+      .reduce((sum, loss) => sum + loss.price, 0);
+  }, [filteredToolLosses]);
 
   return (
     <Card sx={{ boxShadow: 3, minHeight: '80vh' }}>
@@ -922,14 +831,14 @@ const handleOpenDeleteModal = useCallback((id: number) => {
           {/* En-tête */}
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography sx={{ color: '#27aae0' }} variant="h6" gutterBottom>
-              GESTION DES INDISPONIBILITÉS
+              GESTION DES PERTES D'OUTILLAGE
             </Typography>
             <Button
               variant="contained"
               color="success"
               startIcon={<FileDownload />}
               onClick={handleExportExcel}
-              disabled={loading.layoffs || layoffs.length === 0}
+              disabled={loading.toolLosses || toolLosses.length === 0}
             >
               Exporter Excel
             </Button>
@@ -967,17 +876,46 @@ const handleOpenDeleteModal = useCallback((id: number) => {
             scrollButtons="auto"
           >
             <Tab icon={<PersonAdd />} label="AJOUTER" />
-            <Tab icon={<ExitToApp />} label="MISE À PIED" /> 
-            <Tab icon={<BeachAccess />} label="CONGÉS" />
-            <Tab icon={<Stars />} label="CONGÉS EXCEPT." /> 
-            <Tab icon={<Sick />} label="MALADIE" />
-            <Tab icon={<MedicalServices />} label="ACCIDENTS" />
-            <Tab icon={<MedicalInformation />} label="RDV MÉDICAL" />
-            <Tab icon={<Gavel />} label="BLÂME" /> 
-            <Tab icon={<Warning />} label="AVERTISSEMENT" />
-            <Tab icon={<AssignmentTurnedIn />} label="MISSION" />
-            <Tab icon={<LaptopMac />} label="TELETRAVAIL" />
+            <Tab icon={<Warning />} label="TOUTES LES PERTES" />
+            <Tab icon={<TaskAlt />} label="PAYÉES" />
+            <Tab icon={<Warning />} label="NON PAYÉES" />
           </Tabs>
+
+          {/* Statistiques */}
+          <Box display="flex" justifyContent="space-between" mb={3}>
+            <Card sx={{ minWidth: 120, backgroundColor: '#f5f5f5' }}>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Total pertes
+                </Typography>
+                <Typography variant="h6" color="text.primary">
+                  {totalLosses} TND
+                </Typography>
+              </CardContent>
+            </Card>
+            
+            <Card sx={{ minWidth: 120, backgroundColor: '#e8f5e9' }}>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Payées
+                </Typography>
+                <Typography variant="h6" color="success.main">
+                  {totalPaid} TND
+                </Typography>
+              </CardContent>
+            </Card>
+            
+            <Card sx={{ minWidth: 120, backgroundColor: '#ffebee' }}>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Non payées
+                </Typography>
+                <Typography variant="h6" color="error.main">
+                  {totalUnpaid} TND
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
 
           {/* Contenu des onglets */}
           {tabIndex === 0 && (
@@ -1011,7 +949,7 @@ const handleOpenDeleteModal = useCallback((id: number) => {
                 </Box>
               )}
 
-              <Box display="flex"  alignItems="center" mb={2} gap={2}>
+              <Box display="flex" alignItems="center" mb={2} gap={2}>
                 <TextField
                   fullWidth
                   size="small"
@@ -1020,7 +958,6 @@ const handleOpenDeleteModal = useCallback((id: number) => {
                   InputProps={{
                     startAdornment: <Search color="action" sx={{ mr: 1 }} />
                   }}
-                
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <Button
@@ -1028,26 +965,24 @@ const handleOpenDeleteModal = useCallback((id: number) => {
                   sx={{width:250}}
                   onClick={handleSelectAll}
                   disabled={loading.employees}
-              
                 >
-                 Tout sélectionner
+                  Tout sélectionner
                 </Button>
           
                 <Button
                   variant="contained"
                   sx={{width:200}}
                   onClick={() => {
-                  const selectedEmployees = employees.filter(emp => 
+                    const selectedEmployees = employees.filter(emp => 
                       selectionMode.selectedEmployees.includes(emp.id)
                     );
                     handleOpenModal(selectedEmployees);
                   }}
-                    disabled={selectionMode.selectedEmployees.length === 0}
-                    startIcon={<Add />}
-                    >
-                      Ajouter ({selectionMode.selectedEmployees.length})
+                  disabled={selectionMode.selectedEmployees.length === 0}
+                  startIcon={<Add />}
+                >
+                  Ajouter ({selectionMode.selectedEmployees.length})
                 </Button>
-              
               </Box>
 
               {loading.employees ? (
@@ -1095,13 +1030,13 @@ const handleOpenDeleteModal = useCallback((id: number) => {
             </Box>
           )}
 
-          {(tabIndex >= 1 && tabIndex <= 10) && (
+          {(tabIndex >= 1 && tabIndex <= 3) && (
             <Box>
               <TextField
                 fullWidth
                 size="small"
                 variant="outlined"
-                label="Rechercher par employé"
+                label="Rechercher par employé ou outil"
                 InputProps={{
                   startAdornment: <Search color="action" sx={{ mr: 1 }} />
                 }}
@@ -1109,43 +1044,35 @@ const handleOpenDeleteModal = useCallback((id: number) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
 
-              {loading.layoffs ? (
+              {loading.toolLosses ? (
                 <Box display="flex" justifyContent="center" py={4}>
                   <CircularProgress size={60} />
                 </Box>
-              ) : filteredLayoffs.length > 0 ? (
-                <List sx={{ maxHeight: '60vh', overflow: 'auto' }}>
-                  {filteredLayoffs
-                    .filter(layoff => {
-                      const tabFilters = [
-                        'map',
-                        'conge',
-                        'cg_dcs|cg_naissance|cg_mariage|cg_cir',
-                        'cg_maladie', // Tab 4
-                        'accident', // Tab 5
-                        'rdv_medical', // Tab 6
-                        'blame', // Tab 7
-                        'avertissement', // Tab 8
-                        'mission', // Tab 9
-                        'remote' // Tab 10 : Télétravail
-                      ];
-                      const regex = new RegExp(tabFilters[tabIndex - 1]);
-                      return regex.test(layoff.type);
-                    })
-                    .map(layoff => {
-                      const employee = employees.find(emp => emp.id === layoff.employee_id);
-                      return (
-                        <LayoffListItem
-                          key={layoff.id}
-                          layoff={layoff}
-                          employee={employee}
-                          onEdit={() => handleOpenModal(employees, layoff)}
-                          onDelete={handleOpenDeleteModal}
-                          loading={loading.submit}
-                        />
-                      );
-                    })}
-                </List>
+              ) : filteredToolLosses.length > 0 ? (
+                <>
+                  <List sx={{ maxHeight: '60vh', overflow: 'auto' }}>
+                    {filteredToolLosses
+                      .filter(loss => {
+                        if (tabIndex === 1) return true; // Toutes les pertes
+                        if (tabIndex === 2) return loss.is_payed; // Payées
+                        if (tabIndex === 3) return !loss.is_payed; // Non payées
+                        return true;
+                      })
+                      .map(loss => {
+                        const employee = employees.find(emp => emp.id === loss.employee_id);
+                        return (
+                          <ToolLossListItem
+                            key={loss.id}
+                            toolLoss={loss}
+                            employee={employee}
+                            onEdit={() => handleOpenModal(null, loss)}
+                            onDelete={handleOpenDeleteModal}
+                            loading={loading.submit}
+                          />
+                        );
+                      })}
+                  </List>
+                </>
               ) : (
                 <Box textAlign="center" py={4}>
                   <Typography variant="body1" color="text.secondary">
@@ -1157,39 +1084,47 @@ const handleOpenDeleteModal = useCallback((id: number) => {
           )}
 
           {/* Modal d'ajout */}
-          <LayoffModal
+          <ToolLossModal
             state={modalState}
             onClose={handleCloseModal}
             onSubmit={handleSubmit}
-            onDateChange={(field, value) => handleDateChange(field, value, false)}
-            onTypeChange={(type) => handleTypeChange(type, false)}
-            onMotifChange={(motif) => handleMotifChange(motif, false)}
+            onToolNameChange={(name) => handleToolNameChange(name, false)}
+            onToolPriceChange={(price) => handleToolPriceChange(price, false)}
+            onDateChange={(date) => handleDateChange(date, false)}
+            onNotesChange={(notes) => handleNotesChange(notes, false)}
             loading={loading.submit}
             notification={notifications.error}
           />
 
           {/* Modal d'édition */}
-          <LayoffModal
+          <ToolLossModal
             state={editModalState}
             onClose={handleCloseEditModal}
             onSubmit={handleSubmit}
-            onDateChange={(field, value) => handleDateChange(field, value, true)}
-            onTypeChange={(type) => handleTypeChange(type, true)}
-            onMotifChange={(motif) => handleMotifChange(motif, true)}
+            onToolNameChange={(name) => handleToolNameChange(name, true)}
+            
+            onToolPriceChange={(price) => handleToolPriceChange(price, true)}
+            onDateChange={(date) => handleDateChange(date, true)}
+            onNotesChange={(notes) => handleNotesChange(notes, true)}
             loading={loading.submit}
             notification={notifications.error}
           />
-
+  
+          {/* Modal de suppression */}
           <DeleteConfirmationModal
             open={deleteModalState.open}
             onClose={() => setDeleteModalState({ open: false, idToDelete: null })}
-            onConfirm={() => deleteModalState.idToDelete && handleDelete(deleteModalState.idToDelete)}
+            onConfirm={() => {
+              if (deleteModalState.idToDelete) {
+                handleDelete(deleteModalState.idToDelete);
+              }
+            }}
             loading={loading.submit}
           />
-        </LocalizationProvider>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default EmployeeLayoffComponent;
+          </LocalizationProvider>
+        </CardContent>
+      </Card>
+    );
+  };
+  
+  export default ToolLossComponent;

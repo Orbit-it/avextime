@@ -7,6 +7,7 @@ const Endpoint = {
     inventory: `${baseUri}/inventory`,  
     websocket: server, // WebSocket URL
     employees: `${baseUri}/employees`,
+    activeEmployees: `${baseUri}/active-employees`,
     departments: `${baseUri}/departments`,
     layoffs: `${baseUri}/layoffs`,
     holidays: `${baseUri}/holidays`,
@@ -16,6 +17,7 @@ const Endpoint = {
     month: `${baseUri}/month-attendance`,
     pointagesSummary: `${baseUri}/summary`,
     dashboard: `${baseUri}/absences`,
+    perte: `${baseUri}/tool-losses`,
     notif: `${baseUri}/notif`,
     shift: `${baseUri}/shifts`,
     machine: `${baseUri}/machines`,

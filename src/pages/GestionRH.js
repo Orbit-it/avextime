@@ -14,7 +14,7 @@ import DepartmentComponent from '../components/Departments';
 import Planning from '../components/Planning';
 import CalendarView from '../components/CalendarView';
 import EmployeeLayoffComponent from '../components/Layoff.tsx';
-import Synthese from '../components/Synthese';
+import ToolLossComponent from '../components/Perte.tsx';
 import ManualAttendance from '../components/ManualAttendance';
 
 // Icônes
@@ -69,8 +69,8 @@ const GestionRh = () => {
         return <EmployeeAttendanceStats />;  // Partie Statistiques à implémenter
       case 'Pointage Manuel':
         return <ManualAttendance />;
-      case 'Synthèse':
-        return <Synthese />;
+      case 'Perte Outillage':
+        return <ToolLossComponent />;
       case 'Departements':
         return <DepartmentComponent />;
       case 'Planning':
@@ -105,8 +105,8 @@ const GestionRh = () => {
         return <ScheduleIcon fontSize="small" />;
       case 'Indisponibilités':
         return <FlakyIcon fontSize='small' />;
-      case 'Synthèse':
-        return <AutoStoriesIcon fontSize="small" />;
+      case 'Perte Outillage':
+        return <CrisisAlertIcon fontSize="small" />;
       case 'Calendrier':
         return <CalendarTodayIcon fontSize="small" />;
       default:
@@ -156,7 +156,7 @@ const GestionRh = () => {
 >
   <Box sx={{ overflow: 'auto', p: 1 }}>
     <List>
-      {['Le Personnel','Departements', 'Pointage Manuel', 'Planning', 'Indisponibilités','Statistiques', 'Synthèse', 'Calendrier'].map((text) => (
+      {['Le Personnel','Departements', 'Pointage Manuel', 'Planning', 'Indisponibilités','Statistiques', 'Perte Outillage', 'Calendrier'].map((text) => (
         <Button
           key={text}
           fullWidth
@@ -170,7 +170,7 @@ const GestionRh = () => {
             p: 1,
             m: 0.5,
             borderRadius: 0,
-            backgroundColor: selectedMenuItem === text ? 'aquamarine' : '#27aae0',
+            backgroundColor: (text === 'Perte Outillage')? '#F28572' : selectedMenuItem === text ? 'aquamarine' : '#27aae0',
             color: selectedMenuItem === text ? '#000000' : '#ffffff',
             transition: 'all 0.3s ease',
             '&:hover': {

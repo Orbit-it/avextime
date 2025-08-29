@@ -153,18 +153,18 @@ function Synthese() {
       // Ajouter le total mensuel
       const monthlyRecord = monthsAttendance.find(ma => ma.employee_id === employee.attendance_id);
       if (monthlyRecord) {
-        employeeData['Hrs Travaillées'] = monthlyRecord.total_worked_hours || '0.00';
-        employeeData['Hrs Sup 75%'] = monthlyRecord.total_sup || '0.00';
-        employeeData['Hrs Absence'] = monthlyRecord.total_missed_hours || '0.00';
-        employeeData['Hrs Pénalisable'] = monthlyRecord.total_penalisable || '0.00';
-        employeeData['Hrs Pénalisable'] = monthlyRecord.total_penalisable || '0.00';
-        employeeData['Hrs de Nuit'] = monthlyRecord.total_night_hours || '0.00';
-        employeeData['Hrs Dimanche'] = monthlyRecord.total_sunday_hours || '0.00';
-        employeeData['Jour Férié'] = monthlyRecord.total_jf || '0.00';
-        employeeData['Congé'] = monthlyRecord.total_jc || '0.00';
-        employeeData['Congé Exceptionnels'] = monthlyRecord.total_jcx || '0.00';
-        employeeData['Hrs Travaillées Jour férié'] = monthlyRecord.total_htjf || '0.00';
-        employeeData['Prime Assiduité'] = monthlyRecord.prime_assiduite || '0.00';
+        employeeData['Hrs Travaillées'] = monthlyRecord.total_worked_hours || '0,00';   // colonne 1
+        employeeData['Hrs Normal Trav'] = monthlyRecord.total_normal_trav || '0,00';    // colonne 2
+        employeeData['Hrs Sup 75%'] = monthlyRecord.total_sup || '0,00';                // colonne 4
+        employeeData['Hrs Absence'] = monthlyRecord.total_missed_hours || '0,00';       // colonne 5
+        employeeData['Hrs Pénalisable'] = monthlyRecord.total_penalisable || '0,00';    // colonne 6
+        employeeData['Hrs de Nuit'] = monthlyRecord.total_night_hours || '0,00';        // colonne 7
+        employeeData['Hrs Dimanche'] = monthlyRecord.total_sunday_hours || '0,00';      // colonne 8
+        employeeData['Jour Férié'] = monthlyRecord.total_jf || '0,00';                  // colonne 9
+        employeeData['Congé'] = monthlyRecord.total_jc || '0,00';                       // colonne 10
+        employeeData['Congé Exceptionnels'] = monthlyRecord.total_jcx || '0,00';        // colonne 11
+        employeeData['Hrs Travaillées Jour férié'] = monthlyRecord.total_htjf || '0,00';// colonne 12
+        employeeData['Prime Assiduité'] = monthlyRecord.prime_assiduite || '0,00';      // colonne 13
       }
 
       return employeeData;
@@ -317,11 +317,14 @@ function Synthese() {
           border: '1px solid #ddd',
           padding: '5px',
           fontSize: '11px',
-          backgroundColor: dailyAttendances[0].is_anomalie ? '#f07351' : '#e9e9e9'
+          backgroundColor: dailyAttendances[0].is_anomalie ? '#f07351' : dailyAttendances[0].autoriz_getin ? '#c9c9b9':'#e9e9e9'
         }}>
           <table style={{ borderCollapse: 'collapse' }}>
             <tbody>
-              <tr><td><strong>Hrs Travaillées</strong></td><td>{dailyAttendances[0].hours_worked || '00.00'}</td></tr>
+              <tr><td><strong>Heure d'Entrée</strong></td><td>{dailyAttendances[0].getin || '--:--'}</td></tr>
+              <tr><td><strong>Heure de Sortie</strong></td><td>{dailyAttendances[0].getout || '--:--'}</td></tr>
+              <tr><td><strong>Hrs Trav</strong></td><td>{dailyAttendances[0].hours_worked || '00.00'}</td></tr>
+              <tr><td><strong>Hrs Normale</strong></td><td>{dailyAttendances[0].hrs_norm_trav || '00.00'}</td></tr>
               <tr><td><strong>Hrs Absence</strong></td><td>{dailyAttendances[0].missed_hour || '00.00'}</td></tr>
               <tr><td><strong>Hrs Pénalisable</strong></td><td>{dailyAttendances[0].penalisable || '00.00'}</td></tr>
               <tr><td><strong>Hrs Trav J.Férié</strong></td><td>{dailyAttendances[0].worked_hours_on_holidays || '00.00'}</td></tr>
@@ -352,7 +355,10 @@ function Synthese() {
           }}>
             <table style={{ borderCollapse: 'collapse' }}>
               <tbody>
+                <tr><td><strong>Date Debut</strong></td><td>{weekRecord.start_date }</td></tr>
+                <tr><td><strong>Date Fin</strong></td><td>{weekRecord.end_date }</td></tr>
                 <tr><td><strong>Hrs Trav</strong></td><td>{weekRecord.total_worked_hours || '00.00'}</td></tr>
+                <tr><td><strong>Hrs Normal Trav</strong></td><td>{weekRecord.total_normal_trav || '00.00'}</td></tr>
                 <tr><td><strong>Hrs Absence</strong></td><td>{weekRecord.total_missed_hours || '00.00'}</td></tr>
                 <tr><td><strong>Hrs Pénalisable</strong></td><td>{weekRecord.total_penalisable || '00.00'}</td></tr>
                 <tr><td><strong>HTJF</strong></td><td>{weekRecord.total_htjf || '00.00'}</td></tr>
@@ -384,7 +390,10 @@ function Synthese() {
           }}>
             <table style={{ borderCollapse: 'collapse' }}>
               <tbody>
+                <tr><td><strong>Date Debut</strong></td><td>{MonthRecord.month_start }</td></tr>
+                <tr><td><strong>Date Fin</strong></td><td>{MonthRecord.month_end }</td></tr>
                 <tr><td><strong>Hrs Trav</strong></td><td>{MonthRecord.total_worked_hours || '00.00'}</td></tr>
+                <tr><td><strong>Hrs Normal Trav</strong></td><td>{MonthRecord.total_normal_trav || '00.00'}</td></tr>
                 <tr><td><strong>Hrs Absence</strong></td><td>{MonthRecord.total_missed_hours || '00.00'}</td></tr>
                 <tr><td><strong>Hrs Pénalisable</strong></td><td>{MonthRecord.total_penalisable || '00.00'}</td></tr>
                 <tr><td><strong>HTJF</strong></td><td>{MonthRecord.total_htjf || '00.00'}</td></tr>
