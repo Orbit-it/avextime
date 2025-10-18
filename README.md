@@ -1,30 +1,32 @@
 # 🕒 AventuraTime Frontend
 
-AventuraTime is a complete web application for employee attendance, shifts, and absence management.
-This repository contains the frontend built with React, connected to the AventuraTime Backend (Node.js + Express).
+**AventuraTime** is a web app for managing **employee attendance, shifts, and absences**, fully developed by **Serigne Mansour Diop**.  
+This repository contains the **frontend** built with **React** and connected to a **Node.js backend**.
 
-# 🚀 Overview
+---
 
-AventuraTime provides:
+## 🚀 Features
+- Employee attendance and absence tracking  
+- Weekly and monthly summaries  
+- Delay and missing hours calculation  
+- Excel report export  
+- JWT authentication  
+- Light / dark mode  
 
-Employee attendance and absence tracking
+---
 
-Weekly and monthly summaries
+## 🧰 Tech Stack
+- React + Vite  
+- Material UI / Ant Design  
+- Axios  
+- Day.js  
+- XLSX.js  
 
-Delay and missing hours calculation
+---
 
-Excel report export
+## ⚙️ Setup
 
-Authentication system (JWT)
-
-Modern, responsive, and user-friendly interface
-
-# | Technology                   | Purpose                           |
-| ---------------------------- | --------------------------------- |
-| **React + Vite**             | Frontend framework and build tool |
-| **Material UI / Ant Design** | UI components and layout          |
-| **Axios**                    | REST API communication            |
-| **Day.js / Moment.js**       | Date and time formatting          |
-| **XLSX.js**                  | Excel export                      |
-| **React Router**             | Page routing and navigation       |
-
+```bash
+git clone https://github.com/yourusername/aventuratime-frontend.git
+cd aventuratime-frontend
+npm install
