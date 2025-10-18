@@ -3,7 +3,7 @@ import apiConfig from "../config/Endpoint";
 
 
 
-// Créer un employe
+// Create new employee
 const createEmployee = async (data) => {
     try {
       const response = await axios.post(apiConfig.Endpoint.employees, data);
