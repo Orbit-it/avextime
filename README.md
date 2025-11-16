@@ -27,6 +27,6 @@ This repository contains the **frontend** built with **React** and connected to 
 ## ⚙️ Setup
 
 ```bash
-git clone https://github.com/yourusername/aventuratime-frontend.git
-cd aventuratime-frontend
+git clone https://github.com/Orbit-it/AventuraTime_Frontend.git
+cd AventuraTime_Frontend
 npm install
