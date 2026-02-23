@@ -845,7 +845,7 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
         const layoffQuery = `
             SELECT start_date, end_date, type
             FROM layoff
-            WHERE start_date <= $1 AND end_date >= $1 AND is_purged = FALSE AND (type <> 'blame' AND type <> 'avertissement') AND employee_id = $2
+            WHERE start_date <= $1 AND end_date >= $1 AND (type <> 'blame' AND type <> 'avertissement') AND employee_id = $2
         `;
         const layoffResult = await client.query(layoffQuery, [date, employee_innerID]);
 
@@ -866,7 +866,7 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         get_holiday = TRUE,
                         nbr_absence = 1,
                         jc_value = 1       
-                    WHERE employee_id = $1 AND date = $2;
+                    WHERE employee_id = $1 AND date = $2 AND getin_ref IS NOT NULL;
                 `, [employeeId, date]);
             } else if (layof_type === 'map') {  // pour les mis à pieds
                 await client.query(`
@@ -875,7 +875,7 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         status = 'map',
                         nbr_absence = 1,
                         islayoff = TRUE  
-                    WHERE employee_id = $1 AND date = $2;
+                    WHERE employee_id = $1 AND date = $2 AND getin_ref IS NOT NULL;
                 `, [employeeId, date]);
             } else if (layof_type === 'accident') { // pour accident de travail
                 await client.query(`
@@ -884,7 +884,7 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         status = 'accident',
                         nbr_absence = 1,
                         is_accident = TRUE     
-                    WHERE employee_id = $1 AND date = $2; 
+                    WHERE employee_id = $1 AND date = $2 AND getin_ref IS NOT NULL; 
                 `, [employeeId, date]); 
 
             } else if (layof_type === 'cg_maladie') { // pour congé maladie
@@ -894,7 +894,7 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         status = 'cg_maladie',
                         nbr_absence = 1,
                         is_maladie = TRUE  
-                    WHERE employee_id = $1 AND date = $2;
+                    WHERE employee_id = $1 AND date = $2 AND getin_ref IS NOT NULL;
                 `, [employeeId, date]);
             }
             else if (layof_type === 'rdv_medical') { // pour rdv médical, seul effet ( ne perd pas le droit de jour férié )
@@ -904,7 +904,7 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         status = 'rdv_medical',
                         nbr_absence = 1,
                         get_holiday = TRUE      
-                    WHERE employee_id = $1 AND date = $2;
+                    WHERE employee_id = $1 AND date = $2 AND getin_ref IS NOT NULL;
                 `, [employeeId, date]);
             }
             else if (layof_type === 'mission') { // pour les missions, seul effet ( ne perd pas le droit de jour férié )
@@ -915,7 +915,10 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         nbr_absence = 0,
                         missed_hour = 0,
                         penalisable = 0,
-                        get_holiday = TRUE      
+                        hours_ worked = normal_hours,
+                        hrs_norm_trav = normal_hours,
+                        get_holiday = TRUE,
+                        do_not_touch = TRUE,
                     WHERE employee_id = $1 AND date = $2;
                 `, [employeeId, date]);    
             }
@@ -927,7 +930,26 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         nbr_absence = 0,
                         missed_hour = 0,
                         penalisable = 0,
-                        get_holiday = TRUE      
+                        hours_worked = normal_hours,
+                        hrs_norm_trav = normal_hours,
+                        get_holiday = TRUE,
+                        do_not_touch = TRUE   
+                    WHERE employee_id = $1 AND date = $2;
+                `, [employeeId, date]);       
+
+            }
+            else if (layof_type === 'repos') { // pour les Repos ( Pas d'absence )
+                await client.query(`
+                    UPDATE attendance_summary
+                    SET                   
+                        status = 'repos',
+                        nbr_absence = 0,
+                        missed_hour = 0,
+                        penalisable = 0,
+                        hours_worked = 0,
+                        hrs_norm_trav = 0,
+                        get_holiday = TRUE,
+                        do_not_touch = TRUE   
                     WHERE employee_id = $1 AND date = $2;
                 `, [employeeId, date]);       
 
@@ -940,7 +962,7 @@ async function employeeUnvailable(date, employeeId, employee_innerID) {
                         get_holiday = TRUE,
                         is_congex = TRUE,
                         jcx_value = 1       
-                    WHERE employee_id = $1 AND date = $2;
+                    WHERE employee_id = $1 AND date = $2 AND getin_ref IS NOT NULL;
                 `, [employeeId, date]);
             } 
         } else {
@@ -972,7 +994,9 @@ async function employeeWorkShift(date, employeeId, employee_innerID) {
         JOIN work_shifts ws ON ews.work_shift_id = ws.id
         WHERE ews.employee_id = $1 
         AND ews.start_date <= $2 
-        AND (ews.end_date IS NULL OR ews.end_date >= $2);
+        AND (ews.end_date IS NULL OR ews.end_date >= $2)
+        ORDER BY ews.id DESC
+        LIMIT 1;
     `;
         
         const result = await client.query(shiftQuery, [employee_innerID, date]);
@@ -1011,7 +1035,7 @@ async function employeeWorkShift(date, employeeId, employee_innerID) {
                 getin_ref = $4,
                 break_duration = $5,
                 getout_ref = $6
-            WHERE employee_id = $1 AND date = $2 AND isholidays = FALSE AND is_conge = FALSE AND islayoff = FALSE AND do_not_touch is NULL AND status NOT IN ('mission', 'remote');
+            WHERE employee_id = $1 AND date = $2 AND isholidays = FALSE AND is_conge = FALSE AND islayoff = FALSE AND do_not_touch is NULL AND status NOT IN ('mission', 'remote', 'repos');
         `, [employeeId, date, workDuration, startTime, break_duration, endTime]);
         
         console.log(`✅ Shift mis à jour pour ${employeeId} à la date ${date}`);
@@ -1464,7 +1488,7 @@ async function processMissedHours(employeeId, date) {
               AND is_congex IS NOT TRUE 
               AND do_not_touch IS NOT TRUE 
               AND is_maladie IS NOT TRUE  
-              AND status NOT IN ('mission', 'remote')
+              AND status NOT IN ('mission', 'remote', 'repos')
               AND is_accident IS NOT TRUE;
         `, [employeeId, date]);
 
@@ -1924,7 +1948,7 @@ async function updateAttendanceSummaryFromTimes(employeeId, date, getin, getout,
                 missed_hour = GREATEST($7::NUMERIC - $5::NUMERIC, 0),
                 penalisable = GREATEST($7::NUMERIC - $5::NUMERIC, 0),
                 updated_at = NOW()
-            WHERE employee_id = $1 AND date = $2;
+            WHERE employee_id = $1 AND date = $2::DATE;
         `, [
             employeeId, 
             date, 
@@ -1967,14 +1991,9 @@ async function deleteUnusedAttendanceSummary(employeeId = null) {
                 (night_hours IS NULL OR night_hours = 0) AND
                 (sunday_hour IS NULL OR sunday_hour = 0) AND
                 isholidays = FALSE AND 
-                is_conge = FALSE AND 
-                islayoff = FALSE AND
-                is_congex = FALSE AND
-                is_maladie = FALSE AND 
-                is_accident = FALSE AND
                 is_weekend = TRUE AND
                 is_anomalie = FALSE AND
-                status NOT IN ('mission', 'remote') AND
+                do_not_touch = FALSE AND
                 is_today = FALSE
         `;
         
@@ -2008,12 +2027,10 @@ async function deleteAttendanceSummary(employeeId = null, start_date, end_date) 
         
         //  with pg-format or template literals
         const conditions = [
-            'getin_ref IS NULL',   
+            'getin_ref IS NULL',  
+            'getin IS NULL',  // même en weekend l'employé peut travailler
+            'getout IS NULL', 
             'is_weekend = TRUE',
-            'sup_hour IS NULL',      // not working on saturday
-            'night_hours IS NULL',   // not having night shift
-            'sunday_hour IS NULL',   // not working on sunday
-
             `date BETWEEN '${start_date}' AND '${end_date}'`
         ];
         
@@ -2145,6 +2162,8 @@ async function update_week_attendance() {
                 SUM(worked_hours_on_holidays) as total_htjf
             FROM attendance_summary
             WHERE employee_id = $1 AND status <> 'map' AND status <> 'conge' AND status <> 'cg_exp'
+            AND status <> 'mission'
+            AND status <> 'remote'
             AND date BETWEEN $2 AND $3
         `;
 
@@ -2329,15 +2348,42 @@ async function attendanceSummary(employeeId,employee_innerID, date) {
     }
 }
 
+// decallage entre aujourd'hui et date de depart des calculs
+async function decalageDay(date) {
+    // Convertir en objet Date si c'est une chaîne
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // S'assurer que c'est une Date valide
+    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+        console.error('Date invalide reçue:', date);
+        return 0; // ou une valeur par défaut
+    }
+    
+    const today = new Date();
+    
+    // Normaliser les dates pour ignorer l'heure
+    const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const normalizedDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    
+    const diffInMs = Math.abs(normalizedToday - normalizedDate);
+    const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    console.log(`Calcul décalage: ${date} -> ${days} jours`);
+    return days;
+}
+
 // fonction pour traiter les pointages sur une période donnée
-async function processMonthlyAttendance() {
+async function processMonthlyAttendance(dateDebut) {
 
     // Calcul dynamique de la période : aujourd'hui et 3/1 jours avant
     const today = new Date();
     const endDate = today.toISOString().split('T')[0];
 
+    // ATTENDRE le résultat de decalageDay
+    const decalage = await decalageDay(dateDebut);
+
     const start = new Date();
-    start.setDate(start.getDate() - 5);
+    start.setDate(start.getDate() - decalage); // enlever le decallage calculé
     const startDate = start.toISOString().split('T')[0];
 
     const client = await pool.connect();
@@ -2379,7 +2425,7 @@ async function processMonthlyAttendance() {
         await prime_assiduite();
 
         // Verifier les Employees qui ont 5 mois d'anniversaires
-        await checkFiveMonthsAnniversary();
+        //await checkFiveMonthsAnniversary();
 
         console.log(`✅ Traitement des résumés d'attendance terminé pour tous les employés.`);
 
@@ -3684,9 +3730,9 @@ async function prime_assiduite() {
             const { total_penalisable } = attendanceData.rows[0];
             let new_prime_assiduite = 0;
 
-            // 3. Appliquer la logique de calcul de la prime
-            if (total_penalisable > 18 || emp.plafond == 0) {
-                new_prime_assiduite = 0;
+            // 3. Logique de calcul de la prime Assiduité
+            if (total_penalisable > 10 || emp.plafond == 0) {
+                new_prime_assiduite = 0; // si sup à 10 ou pas de plafond alors PA = 0
             } else if (total_penalisable > 9) {
                 new_prime_assiduite = emp.plafond / 4;
             } else if (total_penalisable > 3) {
@@ -4007,5 +4053,6 @@ module.exports = {
     apresAjoutIndisponibility,
     prime_assiduite,
     process,
+    employeeUnvailable,
     deletAttendanceSummary
 };
