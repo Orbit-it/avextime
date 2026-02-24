@@ -2474,6 +2474,8 @@ async function apresAjoutIndisponibility(start_date, end_date, employee_id) {
             // Appliquer la fonction attendanceSummary  à la date spécifique
             for (const employee of employeesResult.rows) {
                 try {
+                    await initAttendanceSummary(employee.attendance_id, dateString);
+                    await employeeUnvailable(dateString, employee.attendance_id, employee.id);
                     await deleteAttendanceSummary(employee.attendance_id, dateString, dateString);
                     await update_week_attendance_by_employee(employee.attendance_id, dateString);
                     await update_monthly_attendance();
