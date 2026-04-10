@@ -1,0 +1,318 @@
+/* Basic table styling */
+.App {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  h1 {
+    text-align: center;
+    color: #333;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+  }
+  
+  
+  .table-container {
+    overflow-x: auto; /* Enable horizontal scrolling */
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 5px;
+    text-align: center;
+  }
+  td {
+    align-items: center;
+    justify-content: center;
+    max-width: 160px;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+  }
+  
+  /* Sticky column styles */
+  .sticky-column {
+    position: sticky;
+    left: 0;
+    background-color: #f2f2f2; /* Match header background */
+    z-index: 1; /* Ensure it appears above scrolling content */
+  }
+  
+  .employee-info {
+    text-align: left;
+    max-width: 200px; /* Adjust width as needed */
+    min-width: 100px; /* Adjust width as needed */
+  }
+
+  .synthese:hover {
+    color: #1976d2;
+}
+ 
+
+  
+  th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  /* Date header styles */
+  .date-header {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .day-number {
+    font-size: 30px; /* Big number for the day */
+    font-weight: bold;
+    margin-right: 8px;
+  }
+  
+  .day-month {
+    text-align: left;
+  }
+  
+  .day-month p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+  
+  .status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 5px;
+  }
+  
+  .status-retard { background-color: yellow; }
+  .status-present { background-color: green; }
+  .status-map { background-color: red; }
+  .status-sup { background-color: blue; }
+  .status-miss { background-color: rgb(51, 51, 53); }
+  
+  /* Week navigation styles */
+  .week-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 100;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .week-navigation button {
+    padding: 8px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #f2f2f2;
+    border-radius: 4px;
+  }
+  
+  .week-navigation button:hover {
+    background-color: #ddd;
+  }
+  
+  .week-navigation input[type="week"] {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+
+  
+.search-container {
+  display: flex;
+  gap: 5px;
+}
+
+.search-container input,
+.search-container select {
+  padding: 5px;
+  border: 1px solid #27aae0;
+  border-radius: 4px;
+  padding: 8px;
+  width: 300px;
+  border: 1px solid #27aae0;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  position: sticky;
+  top: 0px; /* Adjust this value based on the height of the search area */
+  background-color: rgb(66, 64, 64);
+  z-index: 50;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 0;
+  border-radius: 2px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  outline: none;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+/* Animation pour l'ouverture du modal */
+.ReactModal__Overlay {
+  opacity: 0;
+  transition: opacity 200ms ease-in-out;
+}
+
+.ReactModal__Overlay--after-open {
+  opacity: 1;
+}
+
+.ReactModal__Overlay--before-close {
+  opacity: 0;
+}
+
+
+/* Styles for the view mode selector */
+.view-mode-selector {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.view-mode-selector button {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.view-mode-selector button.active {
+  background-color: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+/* Styles for the total column */
+.total-column {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  min-width: 100px;
+}
+
+.total-cell {
+  background-color: #f9f9f9;
+  border-block: '1px solid #ddd';
+  padding: '5px';
+  font-size: '11px';
+}
+
+/* Navigation container */
+.navigation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Month navigation */
+.month-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .view-mode-selector {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .week-navigation, .month-navigation {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .search-container {
+    flex-direction: column;
+  }
+}
+
+.week-dates {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 16px; /* valeur élevée pour obtenir un effet complètement arrondi */
+    background-color: #e0e0e0; /* couleur de fond grise typique des chips */
+    color: rgba(0, 0, 0, 0.87); /* couleur de texte standard */
+    font-size: 0.8125rem; /* taille de police typique pour les chips */
+    font-weight: 500;
+    line-height: 1.5;
+    margin: 4px;
+}
